@@ -1,0 +1,76 @@
+[
+  {
+    "Group": "زیست",
+    "Entries": 5,
+    "Words": [
+      {
+        "EnglishWord": "h24",
+        "Meanings": [
+          "Continuous Round"
+        ]
+      },
+      {
+        "EnglishWord": "haa",
+        "Meanings": [
+          "Historic Aircraft Association"
+        ]
+      },
+      {
+        "EnglishWord": "hai",
+        "Meanings": [
+          "Helicopter Association International"
+        ]
+      },
+      {
+        "EnglishWord": "hand over",
+        "Meanings": [
+          "تحویل دادن"
+        ]
+      },
+      {
+        "EnglishWord": "hardware",
+        "Meanings": [
+          "سخت افزار"
+        ]
+      }
+    ]
+  },
+  {
+    "Group": "ریاضی",
+    "Entries": 5,
+    "Words": [
+      {
+        "EnglishWord": "load classification number",
+        "Meanings": [
+          "عدد مقاومت هواپیما یا باند"
+        ]
+      },
+      {
+        "EnglishWord": "lobby",
+        "Meanings": [
+          "سالن انتظار",
+          "تحمیل گری کردن",
+          "سخنرانی و تبلیغات برای گذراندن"
+        ]
+      },
+      {
+        "EnglishWord": "loc",
+        "Meanings": [
+          "Localiser"
+        ]
+      },
+      {
+        "EnglishWord": "location indicator",
+        "Meanings": [
+          "حروف نشاندهنده محل"
+        ]
+      },
+      {
+        "EnglishWord": "lom",
+        "Meanings": [
+          "Locator Outer Marker"
+        ]
+      }
+    ]
+  }
+]
