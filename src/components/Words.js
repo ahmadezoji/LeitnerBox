@@ -12,48 +12,55 @@ import {
   ScrollView,
   FlatList,
   TouchableOpacity,
+  StyleSheet,
 } from 'react-native'
 import LottieView from 'lottie-react-native'
+import LinearGradient from 'react-native-linear-gradient'
+import {getFileContent} from './FileManger'
+
 export default class Words extends React.Component {
   constructor (props) {
     super(props)
-    this.state = {words: []}
+    this.state = {
+      jsonFile: {},
+      words: [],
+    }
   }
   async componentDidMount () {
-    let words = await this.props.navigation.state.params
-    this.setState({words: words})
+    let path = await this.props.navigation.state.params.item.path
+    await getFileContent({path}, result => {
+      
+      this.setState({
+        jsonFile: JSON.parse(result),
+      })
+      this.props.navigation.state.params.jsonFile = this.state.jsonFile
+    })
   }
   render () {
     return (
-      <View
-        style={{
-          flex: 1,
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: 'white',
-        }}>
-        <StatusBar translucent backgroundColor='transparent' />
+      <LinearGradient
+        colors={['#4c669f', '#3b5998', '#192f6a']}
+        style={styles.linearGradient}>
         <ScrollView contentContainerStyle={{flexGrow: 1}}>
           <FlatList
             virtical
             pagingEnabled={true}
             numColumns={3}
-            data={this.state.words}
+            data={this.state.jsonFile}
             renderItem={this.renderWords}
             keyExtractor={({id}, index) => id}
           />
         </ScrollView>
-      </View>
+      </LinearGradient>
     )
   }
   renderWords = ({item}) => {
     return (
       <TouchableOpacity
-        onPress={() => this.props.navigation.navigate('Card',item)}
+        onPress={() => this.props.navigation.navigate('card', item)}
         style={{
           height: 100,
-          width:100,
+          width: 100,
           margin: 5,
           borderRadius: 20,
           shadowColor: '#000000',
@@ -61,11 +68,23 @@ export default class Words extends React.Component {
           shadowOpacity: 0.5,
           shadowRadius: 3,
           elevation: 10,
+          backgroundColor: 'red',
           justifyContent: 'center',
           alignItems: 'center',
         }}>
-        <Text style={{color: 'blue'}}>{item.EnglishWord}</Text>
+        <Text style={{color: 'blue', fontFamily: 'IRANSansMobile'}}>
+          {item.EnglishWord}
+        </Text>
       </TouchableOpacity>
     )
   }
 }
+
+let styles = StyleSheet.create({
+  linearGradient: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+})

@@ -8,9 +8,17 @@ import Review from './components/Review'
 import Splash from './components/Spalsh'
 import {Colors} from './components/Colors'
 import {Root, Icon} from 'native-base'
-import {TouchableOpacity, View} from 'react-native'
+import {Alert, TouchableOpacity, View} from 'react-native'
 import Words from './components/Words'
 import Card from './components/Card'
+import AddCard, {
+  addCard1,
+  addCard2,
+  addCard3,
+  addCard4,
+  addCategory,
+} from './components/Add'
+import {deletFile} from './components/FileManger'
 // --------------------------------------------
 
 const ReviewStack = createStackNavigator(
@@ -30,37 +38,134 @@ const ReviewStack = createStackNavigator(
 )
 const LearnStack = createStackNavigator(
   {
-    learn: Learn,
-    words: Words,
-    Card: Card,
-  },
-  {
-    defaultNavigationOptions: ({navigationData}) => ({
-      headerShown: true,
-      headerTitleStyle: {fontFamily: 'IRANSansMobile_Bold'},
-      headerTitle: 'آموزش',
-      headerRight: () => (
-        <View style={{flexDirection:'row',marginRight:10}}>
-          <TouchableOpacity onPress={() => console.log(navigationData)}>
-            <Icon
-              name='add-outline'
-              type='Ionicons'
-              style={{color: 'black', fontSize: 30}}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => console.log(navigationData)}>
-            <Icon
-              name='edit'
-              type='MaterialIcons'
-              style={{color: 'black', fontSize: 25}}
-            />
-          </TouchableOpacity>
-        </View>
-      ),
-    }),
+    learn: {
+      screen: Learn,
+      navigationOptions: ({navigation}) => ({
+        headerShown: true,
+        headerTitleStyle: {fontFamily: 'IRANSansMobile_Bold'},
+        headerTitle: 'آموزش',
+        headerRight: () => (
+          <View style={{flexDirection: 'row', marginRight: 10}}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('addCategory')}>
+              <Icon
+                name='add-outline'
+                type='Ionicons'
+                style={{color: 'black', fontSize: 30}}
+              />
+            </TouchableOpacity>
+          </View>
+        ),
+      }),
+    },
+    card: {
+      screen: Card,
+      navigationOptions: ({navigation}) => ({
+        headerShown: true,
+        headerTitleStyle: {fontFamily: 'IRANSansMobile_Bold'},
+        headerTitle: 'آموزش',
+        headerRight: () => (
+          <View style={{flexDirection: 'row', marginRight: 10}}>
+            <TouchableOpacity onPress={() => navigation.push('addCard')}>
+              <Icon
+                name='add-outline'
+                type='Ionicons'
+                style={{color: 'black', fontSize: 30}}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => console.log(navigation)}>
+              <Icon
+                name='edit'
+                type='MaterialIcons'
+                style={{color: 'black', fontSize: 25}}
+              />
+            </TouchableOpacity>
+          </View>
+        ),
+      }),
+    },
+    words: {
+      screen: Words,
+      navigationOptions: ({navigation}) => ({
+        headerShown: true,
+        headerTitleStyle: {fontFamily: 'IRANSansMobile_Bold'},
+        headerTitle: navigation.state.params.item.name.split('.')[0],
+        headerRight: () => (
+          <View style={{flexDirection: 'row', marginRight: 10}}>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.push('addCard', {struct: navigation.state.params})
+              }>
+              <Icon
+                name='add-outline'
+                type='Ionicons'
+                style={{color: 'black', fontSize: 30}}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert('حذف گروه', 'آیا با حذف گروه موافقید ؟', [
+                  {
+                    text: 'خیر',
+                    onPress: () => console.log('Cancel Pressed'),
+                    style: 'cancel',
+                  },
+                  {
+                    text: 'بله',
+                    onPress: () =>
+                      deletFile(navigation.state.params.item.path, result => {
+                        if (result) navigation.navigate('learn');
+                      }),
+                  },
+                ])
+              }}>
+              <Icon
+                name='delete'
+                type='AntDesign'
+                style={{color: 'black', fontSize: 25}}
+              />
+            </TouchableOpacity>
+          </View>
+        ),
+      }),
+    },
   },
   {
     initialRouteName: 'learn',
+  },
+)
+const AddCategoryStack = createStackNavigator(
+  {
+    addCategory: addCategory,
+  },
+  {
+    defaultNavigationOptions: {
+      headerShown: true,
+      headerTitleStyle: {fontFamily: 'IRANSansMobile_Bold'},
+      headerTitle: 'اضافه کردن گروه',
+    },
+  },
+  {
+    initialRouteName: 'addCategory',
+  },
+)
+const AddCardStack = createStackNavigator(
+  {
+    addCard: AddCard,
+    addCard1: addCard1,
+    addCard2: addCard2,
+    addCard3: addCard3,
+    addCard4: addCard4,
+  },
+  {
+    defaultNavigationOptions: {
+      headerShown: true,
+      headerTitleStyle: {fontFamily: 'IRANSansMobile_Bold'},
+      headerTitle: 'اضافه کردن کارت',
+    },
+  },
+  {
+    initialRouteName: 'addCard',
   },
 )
 
@@ -103,6 +208,7 @@ const TabNavigator = createMaterialBottomTabNavigator(
       screen: ReviewStack,
       navigationOptions: {
         tabBarLabel: 'مرور لغات',
+        tabBarBadge: '2',
         tabBarIcon: ({tintColor}) => (
           <View>
             <Icon
@@ -142,13 +248,15 @@ const TabNavigator = createMaterialBottomTabNavigator(
     initialRouteName: 'LEARN',
     activeColor: 'black',
     inactiveColor: 'red',
-    barStyle: {backgroundColor: '#1B0A34'},
+    barStyle: {backgroundColor: '#1B0A34', fontFamily: 'IRANSansMobile'},
   },
 )
 const RootNavigator = createSwitchNavigator(
   {
     Splash: Splash,
     Main: TabNavigator,
+    AddCard: AddCardStack,
+    AddCategory: AddCategoryStack,
   },
   {
     initialRouteName: 'Splash',
