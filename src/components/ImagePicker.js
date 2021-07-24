@@ -5,6 +5,7 @@ const options = {
   takePhotoButtonTitle: 'گرفتن از دوربین ...',
   chooseFromLibraryButtonTitle: 'انتخاب از گالری تصاویر ...',
   cancelButtonTitle: 'منصرف شدم',
+  saveToPhotos: true,
   storageOptions: {
     skipBackup: true,
     path: 'images',
@@ -18,6 +19,7 @@ const options = {
 export const picker = (callback) => {
   ImagePicker.launchImageLibrary(options, (response) => {
     // console.log('Response = ', response.assets[0]);
+    console.log(response.assets[0]);
 
     if (response.didCancel) {
       // console.log('User cancelled image picker');

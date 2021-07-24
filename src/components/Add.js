@@ -16,22 +16,31 @@ import {
   TextInput,
 } from 'react-native'
 import LottieView from 'lottie-react-native'
-import RNFetchBlob from 'rn-fetch-blob'
-const {config, fs} = RNFetchBlob
 import LinearGradient from 'react-native-linear-gradient'
 import {Icon} from 'native-base'
 import ImagePicker from 'react-native-image-picker'
 import {picker} from './ImagePicker'
 import SoundRecorder from 'react-native-sound-recorder'
-import {appendToFile, getFileContent, writeToFile} from './FileManger'
+import {
+  appendToFile,
+  copyFile,
+  createFolder,
+  getFileContent,
+  writeToFile,
+} from './FileManger'
+import moment from 'moment'
 
 const addCategory = ({navigation}) => {
   const [name, setName] = useState('')
 
   const save = () => {
     var obj = []
-    writeToFile(name + '.json', obj, result => {
-      if (result) navigation.navigate('learn')
+    createFolder(name, result => {
+      console.log(result)
+      if (result)
+        writeToFile(name, name + '.json', obj, result => {
+          if (result) navigation.navigate('learn')
+        })
     })
   }
   return (
@@ -52,7 +61,14 @@ const addCategory = ({navigation}) => {
 }
 
 const addCard1 = ({navigation}) => {
+  console.log(navigation.state.params)
   const [meaning, setMeaning] = useState('')
+  const onPars = text => {
+    let array = text.split('،')
+
+    navigation.state.params.meaning = array
+  }
+
   return (
     <LinearGradient
       colors={['#4c669f', '#3b5998', '#192f6a']}
@@ -61,18 +77,12 @@ const addCard1 = ({navigation}) => {
       <TextInput
         style={styles.InputText}
         placeholder='معنی را وارد کنید '
-        onChangeText={text => setMeaning(text)}
+        onChangeText={text => onPars(text)}
         defaultValue={meaning}
       />
       <TouchableOpacity
         style={styles.NextBtn}
-        onPress={() =>
-          navigation.push('addCard2', {
-            word: navigation.state.params.word,
-            meaning: meaning,
-            struct: navigation.state.params.struct,
-          })
-        }>
+        onPress={() => navigation.push('addCard2', navigation.state.params)}>
         <Text style={styles.textBtn}>بعدی</Text>
       </TouchableOpacity>
     </LinearGradient>
@@ -85,23 +95,22 @@ const addCard2 = ({navigation}) => {
       colors={['#4c669f', '#3b5998', '#192f6a']}
       style={styles.linearGradient}>
       <Text style={styles.TitleText}>{navigation.state.params.word}</Text>
-      <Text style={styles.TitleText}>{navigation.state.params.meaning}</Text>
+
+      {navigation.state.params.meaning.map((item, index) => (
+        <Text style={styles.meaningText} key={index}>
+          {item}
+        </Text>
+      ))}
+
       <TextInput
         style={styles.InputText}
         placeholder='مثال وارد کنید'
-        onChangeText={text => setExample(text)}
+        onChangeText={text => (navigation.state.params.example = text)}
         defaultValue={example}
       />
       <TouchableOpacity
         style={styles.NextBtn}
-        onPress={() =>
-          navigation.push('addCard3', {
-            word: navigation.state.params.word,
-            meaning: navigation.state.params.meaning,
-            example: example,
-            struct: navigation.state.params.struct,
-          })
-        }>
+        onPress={() => navigation.push('addCard3', navigation.state.params)}>
         <Text style={styles.textBtn}>بعدی</Text>
       </TouchableOpacity>
     </LinearGradient>
@@ -109,10 +118,24 @@ const addCard2 = ({navigation}) => {
 }
 const addCard3 = ({navigation}) => {
   const [imgUri, setImgUri] = useState('')
+  navigation.state.params.imgUri = ''
   const chooseFile = () => {
     picker((source, data) => {
-      setImgUri(source.uri)
-      console.log(source.uri)
+      // console.log(navigation.state.params.currentFile.path)
+      let newPath =
+        navigation.state.params.currentFile.path +
+        '/' +
+        navigation.state.params.word +
+        '.jpg'
+      console.log(newPath)
+      copyFile(source.uri, newPath, result => {
+        if (result) {
+          setImgUri(newPath)
+          navigation.state.params.imgUri = navigation.state.params.word + '.jpg'
+        }
+      })
+
+      // console.log(source.uri)
     })
   }
   return (
@@ -120,9 +143,18 @@ const addCard3 = ({navigation}) => {
       colors={['#4c669f', '#3b5998', '#192f6a']}
       style={styles.linearGradient}>
       <Text style={styles.TitleText}>{navigation.state.params.word}</Text>
-      <Text style={styles.TitleText}>{navigation.state.params.meaning}</Text>
-      <Text style={styles.TitleText}>{navigation.state.params.example}</Text>
-      {/* <Image source={{uri : imgUri}} style={{width:100,height:100}}/> */}
+      {navigation.state.params.meaning.map((item, index) => (
+        <Text style={styles.meaningText} key={index}>
+          {item}
+        </Text>
+      ))}
+      <Text style={styles.exampleText}>{navigation.state.params.example}</Text>
+      <Image
+        source={{
+          uri: 'file://' + imgUri,
+        }}
+        style={styles.wordImage}
+      />
       <View
         style={{
           flexDirection: 'row',
@@ -132,7 +164,7 @@ const addCard3 = ({navigation}) => {
         <TextInput
           style={styles.InputText}
           placeholder='مثال وارد کنید'
-          onChangeText={text => setImgUri(text)}
+          onChangeText={text => (navigation.state.params.imgUri = text)}
           value={imgUri}
           // defaultValue={imgUri}
         />
@@ -142,55 +174,97 @@ const addCard3 = ({navigation}) => {
       </View>
       <TouchableOpacity
         style={styles.NextBtn}
-        onPress={() =>
-          navigation.push('addCard4', {
-            word: navigation.state.params.word,
-            meaning: navigation.state.params.meaning,
-            example: navigation.state.params.example,
-            imgUri: imgUri,
-            struct: navigation.state.params.struct,
-          })
-        }>
+        onPress={() => navigation.push('addCard4', navigation.state.params)}>
         <Text style={styles.textBtn}>بعدی</Text>
       </TouchableOpacity>
     </LinearGradient>
   )
 }
+const formatNumber = number => `0${number}`.slice(-2)
+
+const getRemaining = (time) => {
+  const mins = Math.floor(time / 60)
+  const secs = time - mins * 60
+  return {mins: formatNumber(mins), secs: formatNumber(secs)}
+}
+
+
 const addCard4 = ({navigation}) => {
   const [voiceUri, setVoiceUri] = useState('')
   const [startRecord, setStartRecord] = useState(false)
-  let iconName = startRecord ? 'stop' : 'play'
-  const saveCard = () => {
+  const [remainingSecs, setRemainingSecs] = useState(0);
+  const [isActive, setIsActive] = useState(false);  
+  let iconName = startRecord ? 'stop' : 'record'
+  const {mins, secs} = getRemaining(remainingSecs)
+
+  const reset = () => {
+    setRemainingSecs(0);
+    setIsActive(false);
+  }
+
+  useEffect(() => {
+    let interval = null
+    if (isActive) {
+      interval = setInterval(() => {
+        setRemainingSecs(remainingSecs => remainingSecs + 1)
+      }, 1000)
+    } else if (!isActive && remainingSecs !== 0) {
+      clearInterval(interval)
+    }
+    return () => clearInterval(interval)
+  }, [isActive, remainingSecs])
+
+  // const startTimer = () => {
+  //   setTimeout(() => {
+  //     setTimer(timer + 1)
+  //     setIsActive(!isActive);
+  //   }, 1000)
+  // }
+  const saveCard = async () => {
+    let interval = await AsyncStorage.getItem('intervalTime') //hour
+    let unit = await AsyncStorage.getItem('intervalTimeUnit') //hour
     let word = {
-      EnglishWord: navigation.state.params.word,
-      Meanings: [navigation.state.params.meaning],
-      Example: navigation.state.params.example,
+      englishWord: navigation.state.params.word,
+      meaning: navigation.state.params.meaning,
+      example: navigation.state.params.example,
       imgUri: navigation.state.params.imgUri,
       voiceUri: voiceUri,
+      readDate: 'null',
+      nextReviewDate: 'null',
+      position: -1,
     }
 
-    // console.log(navigation.state.params.struct.jsonFile,word);
-    const newToDoList = [...navigation.state.params.struct.jsonFile, word]
-    writeToFile(navigation.state.params.struct.item.name, newToDoList, result => {
-      if (result) navigation.navigate('learn')
-    })
-    // appendToFile(navigation.state.params.struct.item.name, word, result => {
-    //   if(result)
-    //     navigation.navigate('learn')
-    // })
-  }
-  const start = () => {
-    SoundRecorder.start(SoundRecorder.PATH_CACHE + '/test.mp4').then(
-      function () {
-        setStartRecord(true)
-        console.log('started recording')
+    const newToDoList = [...navigation.state.params.words, word]
+
+    writeToFile(
+      navigation.state.params.currentFile.name,
+      navigation.state.params.currentFile.name + '.json',
+      newToDoList,
+      result => {
+        if (result) navigation.navigate('learn')
       },
     )
+  }
+  const start = () => {
+    //SoundRecorder.PATH_DOCUMENT
+    reset();
+    SoundRecorder.start(
+      navigation.state.params.currentFile.path +
+        '/' +
+        navigation.state.params.word +
+        '.wav',
+    ).then(function () {
+      setStartRecord(true)
+      setIsActive(!isActive);
+      console.log('started recording')
+    })
   }
   const stop = () => {
     SoundRecorder.stop().then(function (result) {
       setStartRecord(false)
+      reset();
       console.log('stopped recording, audio file saved at: ' + result.path)
+      setVoiceUri(navigation.state.params.word + '.wav')
     })
   }
   return (
@@ -198,9 +272,22 @@ const addCard4 = ({navigation}) => {
       colors={['#4c669f', '#3b5998', '#192f6a']}
       style={styles.linearGradient}>
       <Text style={styles.TitleText}>{navigation.state.params.word}</Text>
-      <Text style={styles.TitleText}>{navigation.state.params.meaning}</Text>
+      {navigation.state.params.meaning.map((item, index) => (
+        <Text style={styles.meaningText} key={index}>
+          {item}
+        </Text>
+      ))}
       <Text style={styles.TitleText}>{navigation.state.params.example}</Text>
-      <Text style={styles.TitleText}>{navigation.state.params.imgUri}</Text>
+      <Image
+        source={{
+          uri:
+            'file://' +
+            navigation.state.params.currentFile.path +
+            '/' +
+            navigation.state.params.imgUri,
+        }}
+        style={styles.wordImage}
+      />
       <View
         style={{
           flexDirection: 'row',
@@ -210,21 +297,11 @@ const addCard4 = ({navigation}) => {
         <TouchableOpacity
           style={styles.RecorderBtn}
           onPress={() => (startRecord ? stop() : start())}>
-          <Icon name={iconName} style={{color: 'blue', margin: 5}} />
+          <Icon name={iconName} type={"MaterialCommunityIcons"} style={{color: 'red', margin: 5}} />
         </TouchableOpacity>
+        <Text style={styles.timerText}>{`${mins}:${secs}`}</Text>
       </View>
-      <TouchableOpacity
-        style={styles.NextBtn}
-        onPress={
-          () => saveCard()
-          // navigation.push('addCard3', {
-          //   word: navigation.state.params.word,
-          //   meaning: navigation.state.params.meaning,
-          //   example: navigation.state.params.example,
-          //   imgUri: navigation.state.params.imgUri,
-          //   voiceUri: voiceUri,
-          // })
-        }>
+      <TouchableOpacity style={styles.NextBtn} onPress={() => saveCard()}>
         <Text style={styles.textBtn}>ذخیره</Text>
       </TouchableOpacity>
     </LinearGradient>
@@ -240,7 +317,8 @@ export default class AddCard extends React.Component {
     }
   }
   async componentDidMount () {
-    // let {item,jsonFile} = await this.props.navigation.state.params;
+    // console.log(this.props.navigation.state.params);
+    // console.log( this.props.navigation.state.params.currentFile);
   }
   render () {
     return (
@@ -250,16 +328,19 @@ export default class AddCard extends React.Component {
         <TextInput
           style={styles.InputText}
           placeholder='واژه را وارد کنید'
-          onChangeText={text => this.setState({text: text})}
+          onChangeText={text => {
+            this.props.navigation.state.params.word = text
+            this.setState({text: text})
+          }}
           defaultValue={this.state.text}
         />
         <TouchableOpacity
           style={styles.NextBtn}
           onPress={() =>
-            this.props.navigation.push('addCard1', {
-              word: this.state.text,
-              struct: this.props.navigation.state.params.struct,
-            })
+            this.props.navigation.push(
+              'addCard1',
+              this.props.navigation.state.params,
+            )
           }>
           <Text
             style={{
@@ -283,9 +364,26 @@ const styles = StyleSheet.create({
   },
   TitleText: {
     color: 'black',
-    fontSize: 30,
+    fontSize: 25,
     textAlign: 'center',
     fontFamily: 'IRANSansMobile_Bold',
+  },
+  meaningText: {
+    color: 'blue',
+    fontSize: 15,
+    textAlign: 'center',
+    fontFamily: 'IRANSansMobile_Bold',
+  },
+  exampleText: {
+    color: 'yellow',
+    fontSize: 12,
+    textAlign: 'center',
+    fontFamily: 'IRANSansMobile_Bold',
+  },
+  wordImage: {
+    width: 200,
+    height: 100,
+    borderRadius: 5,
   },
   InputText: {
     width: 200,
@@ -321,5 +419,12 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
+    margin: 10,
+  },
+  timerText: {
+    color: 'white',
+    fontSize: 10,
+    textAlign: 'center',
+    textAlignVertical: 'center',
   },
 })

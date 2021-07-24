@@ -33,8 +33,8 @@ const getRootFiles = callback => {
   //   console.log('content', contents)
   // })
 }
-const getFileContent = ({path}, callback) => {
-  RNFS.readFile(path).then(contents => {
+const getFileContent = ({path, name}, callback) => {
+  RNFS.readFile(path + '/' + name).then(contents => {
     callback(contents)
   })
 }
@@ -62,9 +62,17 @@ const deletFile = (path, callback) => {
     callback(true)
   })
 }
-const writeToFile = (fileName, obj, callback) => {
-  let path = RNFS.ExternalDirectoryPath + '/' + fileName
-
+const createFolder = (folderName, callback) => {
+  let path = RNFS.ExternalDirectoryPath + '/' + folderName
+  RNFS.mkdir(path).then(result => callback(true))
+}
+const copyFile = (lastPath,newPath, callback) => {
+  RNFS.copyFile(lastPath, newPath)
+    .then(val => callback(true))
+    .catch(error => callback(error))
+}
+const writeToFile = (folderName, fileName, obj, callback) => {
+  let path = RNFS.ExternalDirectoryPath + '/' + folderName + '/' + fileName
   try {
     let string = JSON.stringify(obj)
     RNFS.writeFile(path, string, 'utf8')
@@ -90,4 +98,12 @@ const GetFilename = ({url}) => {
   return ''
 }
 
-export {getRootFiles, getFileContent, writeToFile, appendToFile,deletFile}
+export {
+  getRootFiles,
+  getFileContent,
+  writeToFile,
+  appendToFile,
+  deletFile,
+  createFolder,
+  copyFile,
+}

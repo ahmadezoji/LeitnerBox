@@ -13,29 +13,52 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  RefreshControl,
 } from 'react-native'
 import LottieView from 'lottie-react-native'
 import LinearGradient from 'react-native-linear-gradient'
-import { getRootFiles } from './FileManger'
+import {getRootFiles} from './FileManger'
+import moment from 'moment'
 // const words = require('../assets/words.json')
 export default class Learn extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
       categories: [],
+      refreshing:false
     }
   }
-  componentDidMount () {
-    getRootFiles((data) => {
-      this.setState({categories:data})
-    });
+  onFocusFunction = () => {
+    this._onRefresh();
+  }
+  async componentDidMount () {
+    this.focusListener = this.props.navigation.addListener('didFocus', () => {
+      this.onFocusFunction()
+    })
+    getRootFiles(data => {
+      this.setState({categories: data})
+    })
+  }
+  _onRefresh = () => {
+    this.setState({refreshing: true});
+    getRootFiles(data => {
+      // console.log(data);
+      this.setState({categories: data,refreshing: false})
+    })
   }
   render () {
     return (
       <LinearGradient
         colors={['#4c669f', '#3b5998', '#192f6a']}
         style={styles.linearGradient}>
-        <ScrollView contentContainerStyle={{flexGrow: 1}}>
+        <ScrollView
+          contentContainerStyle={{flexGrow: 1}}
+          refreshControl={
+            <RefreshControl
+              refreshing={this.state.refreshing}
+              onRefresh={this._onRefresh}
+            />
+          }>
           <FlatList
             virtical
             pagingEnabled={true}
@@ -50,7 +73,7 @@ export default class Learn extends React.Component {
   renderLesson = ({item}) => {
     return (
       <TouchableOpacity
-        onPress={() => this.props.navigation.push('words', {item:item})}
+        onPress={() => this.props.navigation.push('words', {currentFile: item})}
         style={{
           backgroundColor: 'red',
           justifyContent: 'center',

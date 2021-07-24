@@ -12,17 +12,6 @@ export default class Splash extends React.Component {
     }
     async navigate() {
         this.props.navigation.navigate('Main');
-        // let index = await AsyncStorage.getItem('wizard');
-        // if (index == "3")
-        //     this.props.navigation.navigate('Main');
-        // else {
-        //     if (index == "0" || index == null)
-        //         this.props.navigation.navigate('wizard1');
-        //     else if (index == "1")
-        //         this.props.navigation.navigate('wizard2');
-        //     else if (index == "2")
-        //         this.props.navigation.navigate('wizard3');
-        // }
     }
     componentDidMount() {
         setTimeout(() => {

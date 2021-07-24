@@ -13,37 +13,58 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  RefreshControl,
 } from 'react-native'
 import LottieView from 'lottie-react-native'
 import LinearGradient from 'react-native-linear-gradient'
 import {getFileContent} from './FileManger'
+import moment from 'moment'
 
-export default class Words extends React.Component {
+export default class ReviewWords extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
       words: [],
+      refreshing: false,
     }
   }
   async componentDidMount () {
+    this._onRefresh()
+  }
+  async _onRefresh () {
+    this.setState({refreshing: true})
     let path = await this.props.navigation.state.params.currentFile.path
     let name =
       (await this.props.navigation.state.params.currentFile.name) + '.json'
-
     await getFileContent({path, name}, result => {
-      this.setState({
-        words: JSON.parse(result),
-      })
-      this.props.navigation.state.params.words = this.state.words
+      let today = new Date()
+      // console.log(today);
+      let i = 0
       
+      for (let index = 0; index < JSON.parse(result).length; index++) {
+        let review = new Date(JSON.parse(result)[index].nextReviewDate)
+        if (review <= today && JSON.parse(result)[index].position > -1) {
+          const newToDoList = [...this.state.words, JSON.parse(result)[index]]
+          this.setState({words: newToDoList})
+          this.props.navigation.state.params.words = this.state.words
+        }
+      }
+      this.setState({refreshing: false})
     })
   }
   render () {
     return (
       <LinearGradient
-        colors={['#4c669f', '#3b5998', '#192f6a']}
+        colors={['#e68d03', '#d7d0c4', '#a28450']}
         style={styles.linearGradient}>
-        <ScrollView contentContainerStyle={{flexGrow: 1}}>
+        <ScrollView
+          contentContainerStyle={{flexGrow: 1}}
+          refreshControl={
+            <RefreshControl
+              refreshing={this.state.refreshing}
+              onRefresh={this._onRefresh}
+            />
+          }>
           <FlatList
             virtical
             pagingEnabled={true}
@@ -56,16 +77,17 @@ export default class Words extends React.Component {
       </LinearGradient>
     )
   }
+  postCard(index) {
+    this.props.navigation.state.params.index = index
+    this.props.navigation.navigate(
+      'reviewcard',
+      this.props.navigation.state.params,
+    )
+  }
   renderWords = ({item, index}) => {
     return (
       <TouchableOpacity
-        onPress={() => (
-          (this.props.navigation.state.params.index = index),
-          this.props.navigation.navigate(
-            'card',
-            this.props.navigation.state.params,
-          )
-        )}
+        onPress={() => this.postCard(index)}
         style={{
           height: 100,
           width: 100,
@@ -76,7 +98,7 @@ export default class Words extends React.Component {
           shadowOpacity: 0.5,
           shadowRadius: 3,
           elevation: 10,
-          backgroundColor: 'red',
+          backgroundColor: '#67b0e2',
           justifyContent: 'center',
           alignItems: 'center',
         }}>
