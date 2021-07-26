@@ -7,9 +7,9 @@ import {
   TransitionSpecs,
   HeaderStyleInterpolators,
 } from 'react-navigation-stack'
-import Learn from './components/Learn'
+import Learn, {SubCategories} from './components/Learn'
 import Profile from './components/Profile'
-import Review from './components/Review'
+import Review, { ReviewSubCategories } from './components/Review'
 import Splash from './components/Spalsh'
 import {Colors} from './components/Colors'
 import {Root, Icon} from 'native-base'
@@ -22,6 +22,7 @@ import AddCard, {
   addCard3,
   addCard4,
   addCategory,
+  addSubCategory,
 } from './components/Add'
 import {deletFile} from './components/FileManger'
 import ReviewCard from './components/ReviewCard'
@@ -147,6 +148,70 @@ const ReviewStack = createStackNavigator(
                 type='Entypo'
                 fontSize={25}
                 style={{color: 'black', fontSize: 25}}
+              />
+            </TouchableOpacity>
+          </View>
+        ),
+      }),
+    },
+    reviewSubCategories: {
+      screen: ReviewSubCategories,
+      navigationOptions: ({navigation}) => ({
+        ...MyTransitionToLeft,
+        headerShown: true,
+        headerTitleStyle: {
+          fontFamily: 'IRANSansMobile_Bold',
+          textAlign: 'center',
+        },
+        headerTitle: navigation.state.params.categoryName,
+        headerRight: () => (
+          <View style={{flexDirection: 'row', marginRight: 2}}>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate('addSubCategory', {
+                  categoryName: navigation.state.params.categoryName,
+                })
+              }>
+              <Icon
+                name='add-outline'
+                type='Ionicons'
+                style={{color: 'black', fontSize: 30}}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: 2,
+              }}
+              onPress={() => {
+                Alert.alert('حذف گروه', 'آیا با حذف گروه موافقید ؟', [
+                  {
+                    text: 'خیر',
+                    onPress: () => console.log('Cancel Pressed'),
+                    style: 'cancel',
+                  },
+                  {
+                    text: 'بله',
+                    onPress: () =>
+                      deletFile(
+                        navigation.state.params.currentFile.path,
+                        result => {
+                          if (result) navigation.goBack()
+                        },
+                      ),
+                  },
+                ])
+              }}>
+              <Icon
+                name='delete'
+                type='AntDesign'
+                style={{
+                  color: 'black',
+                  fontSize: 25,
+                  textAlignVertical: 'center',
+                  textAlign: 'center',
+                }}
               />
             </TouchableOpacity>
           </View>
@@ -353,6 +418,77 @@ const LearnStack = createStackNavigator(
         ),
       }),
     },
+    subCategories: {
+      screen: SubCategories,
+      navigationOptions: ({navigation}) => ({
+        ...MyTransitionToLeft,
+        headerShown: true,
+        headerTitleStyle: {
+          fontFamily: 'IRANSansMobile_Bold',
+          textAlign: 'center',
+        },
+        headerTitle: navigation.state.params.categoryName,
+        headerRight: () => (
+          <View style={{flexDirection: 'row', marginRight: 2}}>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate('addSubCategory', {
+                  categoryName: navigation.state.params.categoryName,
+                })
+              }>
+              <Icon
+                name='add-outline'
+                type='Ionicons'
+                style={{color: 'black', fontSize: 30}}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: 2,
+              }}
+              onPress={() => {
+                Alert.alert('حذف گروه', 'آیا با حذف گروه موافقید ؟', [
+                  {
+                    text: 'خیر',
+                    onPress: () => console.log('Cancel Pressed'),
+                    style: 'cancel',
+                  },
+                  {
+                    text: 'بله',
+                    onPress: () =>
+                      deletFile(
+                        navigation.state.params.currentFile.path,
+                        result => {
+                          if (result) navigation.goBack()
+                        },
+                      ),
+                  },
+                ])
+              }}>
+              <Icon
+                name='delete'
+                type='AntDesign'
+                style={{
+                  color: 'black',
+                  fontSize: 25,
+                  textAlignVertical: 'center',
+                  textAlign: 'center',
+                }}
+              />
+            </TouchableOpacity>
+          </View>
+        ),
+      }),
+    },
+  },
+  {
+    initialRouteName: 'learn',
+  },
+)
+const AddCategoryStack = createStackNavigator(
+  {
     addCategory: {
       screen: addCategory,
       navigationOptions: ({navigation}) => ({
@@ -362,31 +498,32 @@ const LearnStack = createStackNavigator(
         ...MyTransitionToLeft,
       }),
     },
+    addSubCategory: {
+      screen: addSubCategory,
+      navigationOptions: ({navigation}) => ({
+        headerShown: true,
+        headerTitleStyle: {fontFamily: 'IRANSansMobile_Bold'},
+        headerTitle: 'اضافه کردن زیر گروه',
+        ...MyTransitionToLeft,
+      }),
+    },
   },
   {
-    initialRouteName: 'learn',
+    defaultNavigationOptions: {
+      headerShown: true,
+      headerTitleStyle: {fontFamily: 'IRANSansMobile_Bold'},
+      headerTitle: 'اضافه کردن گروه',
+      ...MyTransitionToLeft,
+    },
+  },
+  {
+    initialRouteName: 'addCategory',
   },
 )
-// const AddCategoryStack = createStackNavigator(
-//   {
-//     addCategory: addCategory,
-//   },
-//   {
-//     defaultNavigationOptions: {
-//       headerShown: true,
-//       headerTitleStyle: {fontFamily: 'IRANSansMobile_Bold'},
-//       headerTitle: 'اضافه کردن گروه',
-//       ...MyTransitionToLeft,
-//     },
-//   },
-//   {
-//     initialRouteName: 'addCategory',
-//   },
-// )
 
 const AddCardStack = createStackNavigator(
   {
-    addCard:AddCard,
+    addCard: AddCard,
     addCard1: addCard1,
     addCard2: addCard2,
     addCard3: addCard3,
@@ -436,7 +573,7 @@ const TabNavigator = createMaterialBottomTabNavigator(
           />
         ),
         activeColor: 'black',
-        inactiveColor: Colors.icons,
+        inactiveColor: 'red',
         barStyle: {backgroundColor: Colors.background},
       },
     },
@@ -456,7 +593,7 @@ const TabNavigator = createMaterialBottomTabNavigator(
           </View>
         ),
         activeColor: 'black',
-        inactiveColor: Colors.icons,
+        inactiveColor: 'red',
         barStyle: {backgroundColor: Colors.background},
       },
     },
@@ -475,7 +612,7 @@ const TabNavigator = createMaterialBottomTabNavigator(
           </View>
         ),
         activeColor: 'black',
-        inactiveColor: Colors.icons,
+        inactiveColor: 'red',
         barStyle: {backgroundColor: Colors.background},
       },
     },
@@ -484,7 +621,7 @@ const TabNavigator = createMaterialBottomTabNavigator(
     initialRouteName: 'LEARN',
     activeColor: 'black',
     inactiveColor: 'red',
-    barStyle: {backgroundColor: '#1B0A34', fontFamily: 'IRANSansMobile'},
+    barStyle: {backgroundColor: 'blue', fontFamily: 'IRANSansMobile'},
   },
 )
 const RootNavigator = createSwitchNavigator(
@@ -492,6 +629,7 @@ const RootNavigator = createSwitchNavigator(
     Splash: Splash,
     Main: TabNavigator,
     AddCard: AddCardStack,
+    AddCategoryStack: AddCategoryStack,
   },
   {
     initialRouteName: 'Splash',

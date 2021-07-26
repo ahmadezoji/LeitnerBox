@@ -17,7 +17,7 @@ import {
 import LottieView from 'lottie-react-native'
 import LinearGradient from 'react-native-linear-gradient'
 import {writeToFile} from './FileManger'
-import {coef, COEFS} from './consts'
+import {coef, COEFS, STEPS_COUNT} from './consts'
 import moment from 'moment'
 import {Icon} from 'native-base'
 import {VoicePlayer} from './Voice'
@@ -45,47 +45,65 @@ export default class ReviewCard extends React.Component {
     let unit = await AsyncStorage.getItem('intervalTimeUnit') //minute
     let index = await this.props.navigation.state.params.index
 
-    // console.log(moment(.diff(new Date()));
-
-    if (coef == COEFS.superEasy) {
-      this.props.navigation.state.params.words[index].position = -20 //learned this word
-    } else if (coef == COEFS.veryEasy) {
-      this.props.navigation.state.params.words[index].position =
-        this.props.navigation.state.params.words[index].position + 2
-    } else if (coef == COEFS.easy) {
-      this.props.navigation.state.params.words[index].position =
-        this.props.navigation.state.params.words[index].position + 1
-    } else if (coef == COEFS.medium) {
-      // this.props.navigation.state.params.words[index].nextReviewDate = moment(new Date()).add(coef * interval, unit)
-    } else if (coef == COEFS.hard) {
-      this.props.navigation.state.params.words[index].position =
-        this.props.navigation.state.params.words[index].position - 1
-    }
-
     let position = this.props.navigation.state.params.words[index].position
-    console.log(position)
+    let review = this.props.navigation.state.params.words[index].nextReviewDate
+    let today = new Date()
 
-    this.props.navigation.state.params.words[index].nextReviewDate = moment(
-      new Date(),
-    ).add(Math.pow(2, position) * interval, unit)
+    let max = moment(review).add(Math.pow(2, STEPS_COUNT) * interval, unit)
+    if (max < today) {
+      this.props.navigation.state.params.words[index].position = STEPS_COUNT
+    } else {
+      // return;
+      if (coef == COEFS.superEasy) {
+        this.props.navigation.state.params.words[index].position = -20 //learned this word
+      } else if (coef == COEFS.veryEasy) {
+        this.props.navigation.state.params.words[index].position =
+          this.props.navigation.state.params.words[index].position + 2
+      } else if (coef == COEFS.easy) {
+        this.props.navigation.state.params.words[index].position =
+          this.props.navigation.state.params.words[index].position + 1
+      } else if (coef == COEFS.medium) {
+        // this.props.navigation.state.params.words[index].nextReviewDate = moment(new Date()).add(coef * interval, unit)
+      } else if (coef == COEFS.hard) {
+        this.props.navigation.state.params.words[index].position =
+          this.props.navigation.state.params.words[index].position - 1
+      }
 
-    console.log(this.props.navigation.state.params.words[index].nextReviewDate);
+      this.props.navigation.state.params.words[index].nextReviewDate = moment(
+        new Date(),
+      ).add(Math.pow(2, position) * interval, unit)
+    }
+    // let position = this.props.navigation.state.params.words[index].position
+    // console.log(position)
+
+    // console.log(position)
+    // console.log(
+    //   new Date(),
+    //   this.props.navigation.state.params.words[index].nextReviewDate,
+    // )
+    // console.log(this.props.navigation.state.params.words);
 
     writeToFile(
-     this.props.navigation.state.params.currentFile.name,
       this.props.navigation.state.params.currentFile.name,
+      this.props.navigation.state.params.currentFile.name + '.json',
       this.props.navigation.state.params.words,
       result => {
         console.log(result)
+        this.props.navigation.goBack()
       },
     )
   }
   render () {
     let size = Object.keys(this.props.navigation.state.params.words).length
     let index = this.props.navigation.state.params.index + 1
-    let fileName = this.state.word.voiceUri
-    let path =
-      this.props.navigation.state.params.currentFile.path + '/' + fileName
+    let pathVoice1 =
+      this.props.navigation.state.params.currentFile.path +
+      '/' +
+      this.state.word.voiceUri1
+    let pathVoice2 =
+      this.props.navigation.state.params.currentFile.path +
+      '/' +
+      this.state.word.voiceUri2
     return (
       <LinearGradient
         colors={['#e68d03', '#d7d0c4', '#a28450']}
@@ -108,6 +126,7 @@ export default class ReviewCard extends React.Component {
                   justifyContent: 'center',
                   alignItems: 'center',
                 }}>
+                <VoicePlayer inputpath={pathVoice1} />
                 <Image
                   // source={{uri: 'file:////storage/emulated/0/Pictures/Img.jpg'}}
                   source={{
@@ -133,7 +152,7 @@ export default class ReviewCard extends React.Component {
                   style={{color: 'black', fontSize: 15, textAlign: 'center'}}>
                   {this.state.word.example}
                 </Text>
-                {this.state.loaded && <VoicePlayer inputpath={path} />}
+                <VoicePlayer inputpath={pathVoice2} />
                 {index < size && (
                   <TouchableOpacity
                     style={styles.NextBtn}

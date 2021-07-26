@@ -6,4 +6,6 @@ export const COEFS = {
     medium: 3,
     hard: 4,
   }
+
+export const STEPS_COUNT = 5;
   

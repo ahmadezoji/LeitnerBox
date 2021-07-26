@@ -21,8 +21,8 @@ export default class Profile extends React.Component {
     super(props)
     this.state = {
       show: true,
-      intervalTime: '1',
-      unit: 'minute',
+      intervalTime: '10',
+      unit: 'second',
     }
   }
   async componentDidMount () {

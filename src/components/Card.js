@@ -40,7 +40,6 @@ export default class Card extends React.Component {
     // console.log(this.props.navigation.state.params);
 
     this.setState({word: words[index], loaded: true})
-    // console.log(this.state.word);
 
     let interval = await AsyncStorage.getItem('intervalTime') //minute
     let unit = await AsyncStorage.getItem('intervalTimeUnit') //minute
@@ -52,20 +51,20 @@ export default class Card extends React.Component {
     this.props.navigation.state.params.words[index].nextReviewDate = moment(
       today,
     ).add(Math.pow(2, position) * interval, unit)
-
     this.save()
   }
-  // componentDidUpdate(){
-  // console.log('update');
-  // }
   async save () {
+    let path =
+      this.props.navigation.state.params.categoryName +
+      '/' +
+      this.props.navigation.state.params.currentFile.name
     writeToFile(
-      this.props.navigation.state.params.currentFile.name,
+      path,
       this.props.navigation.state.params.currentFile.name + '.json',
       this.props.navigation.state.params.words,
       result => {
         if (result) {
-          // console.log(result);
+          console.log(result)
         }
       },
     )
@@ -73,24 +72,55 @@ export default class Card extends React.Component {
   render () {
     let size = Object.keys(this.props.navigation.state.params.words).length
     let index = this.props.navigation.state.params.index + 1
-    let fileName = this.state.word.voiceUri
-    let path =
-      this.props.navigation.state.params.currentFile.path + '/' + fileName
+    let pathVoice1 =
+      this.props.navigation.state.params.currentFile.path +
+      '/' +
+      this.state.word.voiceUri1
+    let pathVoice2 =
+      this.props.navigation.state.params.currentFile.path +
+      '/' +
+      this.state.word.voiceUri2
+
+    // console.log('ahmad:'+path);
 
     return (
       <LinearGradient
         colors={['#4c669f', '#3b5998', '#192f6a']}
         style={styles.linearGradient}>
         <StatusBar translucent backgroundColor='transparent' />
-        <ScrollView contentContainerStyle={{flexGrow: 1}}>
+        <ScrollView
+          contentContainerStyle={{flexGrow: 1}}
+          showsVerticalScrollIndicator={false}>
           <View style={{justifyContent: 'center', alignItems: 'center'}}>
-            <Text style={styles.TitleText}>{this.state.word.englishWord}</Text>
+            <View style={{flexDirection: 'row'}}>
+              <Text style={styles.TitleText}>
+                {this.state.word.englishWord}
+              </Text>
+              {index < size && (
+                <TouchableOpacity
+                  style={styles.NextBtn}
+                  onPress={() => {
+                    if (index < size) {
+                      ;(this.props.navigation.state.params.index = index),
+                        this.props.navigation.replace(
+                          'card',
+                          this.props.navigation.state.params,
+                        )
+                    }
+                  }}>
+                  {/* <Text style={styles.textBtn}>>|</Text> */}
+                  <Icon name='stepforward' type='AntDesign' />
+                </TouchableOpacity>
+              )}
+            </View>
+            <VoicePlayer inputpath={pathVoice1} />
             {/* {this.state.word.meaning.map((item, index) => ( */}
             <Text style={styles.meaningText} key={index}>
               {this.state.word.meaning}
             </Text>
             {/* ))} */}
             <Text style={styles.exampleText}>{this.state.word.example}</Text>
+            <VoicePlayer inputpath={pathVoice2} />
             <Image
               source={{
                 uri:
@@ -101,24 +131,6 @@ export default class Card extends React.Component {
               }}
               style={styles.wordImage}
             />
-
-            {this.state.loaded && <VoicePlayer inputpath={path} />}
-            {index < size && (
-              <TouchableOpacity
-                style={styles.NextBtn}
-                onPress={() => {
-                  if (index < size) {
-                    ;(this.props.navigation.state.params.index = index),
-                      this.props.navigation.replace(
-                        'card',
-                        this.props.navigation.state.params,
-                      )
-                  }
-                }}>
-                {/* <Text style={styles.textBtn}>بعدی</Text> */}
-                <Icon name='stepforward' type='AntDesign' />
-              </TouchableOpacity>
-            )}
           </View>
         </ScrollView>
       </LinearGradient>
@@ -189,13 +201,14 @@ const styles = StyleSheet.create({
     margin: 10,
   },
   NextBtn: {
-    backgroundColor: 'white',
+    backgroundColor: 'transparent',
     width: 40,
     height: 40,
-    borderRadius: 10,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
+    margin: 5,
   },
   browsBtn: {
     backgroundColor: 'white',

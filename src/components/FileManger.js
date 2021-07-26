@@ -10,29 +10,18 @@ import {
 } from 'react-native'
 let RNFS = require('react-native-fs')
 let path = RNFS.ExternalDirectoryPath
-const getRootFiles = callback => {
-  RNFS.readDir(path) // On Android, use "RNFS.DocumentDirectoryPath" (MainBundlePath is not defined)
+const getRootFiles = (appendPath,callback) => {
+  RNFS.readDir(path+appendPath)
     .then(result => {
       //   console.log('GOT RESULT', result[0].name)
       callback(result)
-      return Promise.all([RNFS.stat(result[0].path), result[0].path])
+      return '';//Promise.all([RNFS.stat(result[0].path), result[0].path])
     })
     .catch(err => {
       console.log(err.message, err.code)
     })
-  // .then(statResult => {
-  //   if (statResult[0].isFile()) {
-  //     // if we have a file, read it
-  //     return RNFS.readFile(statResult[1], 'utf8')
-  //   }
-
-  //   return 'no file'
-  // })
-  // .then(contents => {
-  //   // log the file contents
-  //   console.log('content', contents)
-  // })
 }
+
 const getFileContent = ({path, name}, callback) => {
   RNFS.readFile(path + '/' + name).then(contents => {
     callback(contents)
@@ -62,8 +51,12 @@ const deletFile = (path, callback) => {
     callback(true)
   })
 }
-const createFolder = (folderName, callback) => {
-  let path = RNFS.ExternalDirectoryPath + '/' + folderName
+const createCategory = (categoryName, callback) => {
+  let path = RNFS.ExternalDirectoryPath + '/' + categoryName
+  RNFS.mkdir(path).then(result => callback(true))
+}
+const createSubCategory = (categoryName,subCategoryName, callback) => {
+  let path = RNFS.ExternalDirectoryPath + '/' + categoryName + '/' + subCategoryName
   RNFS.mkdir(path).then(result => callback(true))
 }
 const copyFile = (lastPath,newPath, callback) => {
@@ -104,6 +97,7 @@ export {
   writeToFile,
   appendToFile,
   deletFile,
-  createFolder,
+  createCategory,
+  createSubCategory,
   copyFile,
 }

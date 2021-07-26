@@ -30,6 +30,7 @@ export default class Words extends React.Component {
     let name =
       (await this.props.navigation.state.params.currentFile.name) + '.json'
 
+
     await getFileContent({path, name}, result => {
       this.setState({
         words: JSON.parse(result),
@@ -79,6 +80,7 @@ export default class Words extends React.Component {
           backgroundColor: 'red',
           justifyContent: 'center',
           alignItems: 'center',
+          opacity : item.readDate !== 'null' ? 0.5 : 1
         }}>
         <Text style={{color: 'blue', fontFamily: 'IRANSansMobile'}}>
           {item.englishWord}
