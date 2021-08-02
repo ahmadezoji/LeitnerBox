@@ -9,26 +9,25 @@ import {
 } from 'react-navigation-stack'
 import Learn, {SubCategories} from './components/Learn'
 import Profile from './components/Profile'
-import Review, { ReviewSubCategories } from './components/Review'
+import Review, {ReviewSubCategories} from './components/Review'
 import Splash from './components/Spalsh'
 import {Colors} from './components/Colors'
 import {Root, Icon} from 'native-base'
-import {Alert, TouchableOpacity, View} from 'react-native'
-import Words from './components/Words'
+import {Alert, Text, TouchableOpacity, View} from 'react-native'
+import Words, {shareToFiles} from './components/Words'
 import Card from './components/Card'
 import AddCard, {
   addCard1,
   addCard2,
   addCard3,
-  addCard4,
   addCategory,
   addSubCategory,
 } from './components/Add'
 import {deletFile} from './components/FileManger'
-import ReviewCard from './components/ReviewCard'
-import ReviewWords from './components/ReviewWords'
-import {writeFile} from 'react-native-fs'
+import ReviewCard, {MyTimer} from './components/ReviewCard'
+import ReviewWords, {getReviewWords} from './components/ReviewWords'
 import {writeToFile} from './components/FileManger'
+import AsyncStorage from '@react-native-community/async-storage'
 
 // --------------------------------------------
 const MyTransitionToDown = {
@@ -88,37 +87,36 @@ const MyTransitionToLeft = {
     }
   },
 }
+
 const ReviewStack = createStackNavigator(
   {
     review: Review,
     reviewcard: {
       screen: ReviewCard,
+
       navigationOptions: ({navigation}) => ({
         headerShown: true,
         ...MyTransitionToLeft,
         headerTitleStyle: {
           fontFamily: 'IRANSansMobile_Bold',
           textAlign: 'center',
+          textAlignVertical: 'center',
+          fontWeight: 'bold',
         },
         headerTitle: '',
-        headerRight: () => (
-          <View style={{flexDirection: 'row', marginRight: 10}}>
-            <TouchableOpacity onPress={() => navigation.push('addCard')}>
-              <Icon
-                name='add-outline'
-                type='Ionicons'
-                style={{color: 'black', fontSize: 30}}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => console.log(navigation)}>
-              <Icon
-                name='edit'
-                type='MaterialIcons'
-                style={{color: 'black', fontSize: 25}}
-              />
-            </TouchableOpacity>
-          </View>
-        ),
+        headerRight: () =>
+          navigation.state.params.timer && (
+            <View style={{justifyContent: 'center', alignItems: 'center'}}>
+              <Text
+                style={{
+                  color: 'black',
+                  fontSize: 15,
+                  textAlign: 'center',
+                }}>
+                {navigation.state.params.timer}
+              </Text>
+            </View>
+          ),
       }),
     },
     reviewwords: {
@@ -167,51 +165,19 @@ const ReviewStack = createStackNavigator(
         headerRight: () => (
           <View style={{flexDirection: 'row', marginRight: 2}}>
             <TouchableOpacity
-              onPress={() =>
-                navigation.navigate('addSubCategory', {
-                  categoryName: navigation.state.params.categoryName,
-                })
-              }>
-              <Icon
-                name='add-outline'
-                type='Ionicons'
-                style={{color: 'black', fontSize: 30}}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
               style={{
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: 2,
               }}
               onPress={() => {
-                Alert.alert('حذف گروه', 'آیا با حذف گروه موافقید ؟', [
-                  {
-                    text: 'خیر',
-                    onPress: () => console.log('Cancel Pressed'),
-                    style: 'cancel',
-                  },
-                  {
-                    text: 'بله',
-                    onPress: () =>
-                      deletFile(
-                        navigation.state.params.currentFile.path,
-                        result => {
-                          if (result) navigation.goBack()
-                        },
-                      ),
-                  },
-                ])
+                shareToFiles(this.state.downloadUri)
               }}>
               <Icon
-                name='delete'
-                type='AntDesign'
-                style={{
-                  color: 'black',
-                  fontSize: 25,
-                  textAlignVertical: 'center',
-                  textAlign: 'center',
-                }}
+                name='share-alternative'
+                type='Entypo'
+                fontSize={25}
+                style={{color: 'black', fontSize: 25}}
               />
             </TouchableOpacity>
           </View>
@@ -276,7 +242,10 @@ const LearnStack = createStackNavigator(
                 style={{color: 'black', fontSize: 30}}
               />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => console.log(navigation)}>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.push('addCard', navigation.state.params)
+              }>
               <Icon
                 name='edit'
                 type='MaterialIcons'
@@ -303,10 +272,13 @@ const LearnStack = createStackNavigator(
                       delete navigation.state.params.words[
                         navigation.state.params.index
                       ]
-                      console.log(navigation.state.params)
+                      let path =
+                        navigation.state.params.categoryName +
+                        '/' +
+                        navigation.state.params.currentFile.name
                       writeToFile(
-                        navigation.state.params.currentFile.name,
-                        navigation.state.params.currentFile.name,
+                        path,
+                        navigation.state.params.currentFile.name + '.json',
                         navigation.state.params.words,
                         result => {
                           if (result) navigation.navigate('learn')
@@ -365,7 +337,7 @@ const LearnStack = createStackNavigator(
                 margin: 2,
               }}
               onPress={() => {
-                Alert.alert('حذف گروه', 'آیا با حذف گروه موافقید ؟', [
+                Alert.alert('حذف زیر گروه', 'آیا با حذف زیر گروه موافقید ؟', [
                   {
                     text: 'خیر',
                     onPress: () => console.log('Cancel Pressed'),
@@ -377,7 +349,15 @@ const LearnStack = createStackNavigator(
                       deletFile(
                         navigation.state.params.currentFile.path,
                         result => {
-                          if (result) navigation.goBack()
+                          if (result) {
+                            navigation.state.params.currentFile.name !== null &&
+                              AsyncStorage.removeItem(
+                                navigation.state.params.categoryName +
+                                  '/' +
+                                  navigation.state.params.currentFile.name,
+                              )
+                            navigation.goBack()
+                          }
                         },
                       ),
                   },
@@ -401,7 +381,7 @@ const LearnStack = createStackNavigator(
                 margin: 2,
               }}
               onPress={() => {
-                shareToFiles(this.state.downloadUri)
+                shareToFiles(navigation.state.params)
               }}>
               <Icon
                 name='share-alternative'
@@ -432,7 +412,7 @@ const LearnStack = createStackNavigator(
           <View style={{flexDirection: 'row', marginRight: 2}}>
             <TouchableOpacity
               onPress={() =>
-                navigation.navigate('addSubCategory', {
+                navigation.push('addSubCategory', {
                   categoryName: navigation.state.params.categoryName,
                 })
               }>
@@ -508,14 +488,14 @@ const AddCategoryStack = createStackNavigator(
       }),
     },
   },
-  {
-    defaultNavigationOptions: {
-      headerShown: true,
-      headerTitleStyle: {fontFamily: 'IRANSansMobile_Bold'},
-      headerTitle: 'اضافه کردن گروه',
-      ...MyTransitionToLeft,
-    },
-  },
+  // {
+  //   defaultNavigationOptions: {
+  //     headerShown: true,
+  //     headerTitleStyle: {fontFamily: 'IRANSansMobile_Bold'},
+  //     headerTitle: 'اضافه کردن گروه',
+  //     ...MyTransitionToLeft,
+  //   },
+  // },
   {
     initialRouteName: 'addCategory',
   },
@@ -527,7 +507,6 @@ const AddCardStack = createStackNavigator(
     addCard1: addCard1,
     addCard2: addCard2,
     addCard3: addCard3,
-    addCard4: addCard4,
   },
   {
     defaultNavigationOptions: {
@@ -557,13 +536,23 @@ const ProfileStack = createStackNavigator(
     initialRouteName: 'profile',
   },
 )
-
+let hasReviewWord = 0
+getReviewWords(result => (hasReviewWord = result))
 const TabNavigator = createMaterialBottomTabNavigator(
   {
     LEARN: {
       screen: LearnStack,
       navigationOptions: {
-        tabBarLabel: 'آموزش',
+        tabBarLabel: (
+          <Text
+            style={{
+              fontFamily: 'IRANSansMobile',
+              textAlign: 'center',
+              fontSize: 12,
+            }}>
+            آموزش
+          </Text>
+        ),
         tabBarIcon: ({tintColor}) => (
           <Icon
             color={tintColor}
@@ -579,9 +568,18 @@ const TabNavigator = createMaterialBottomTabNavigator(
     },
     REVIEW: {
       screen: ReviewStack,
-      navigationOptions: {
-        tabBarLabel: 'مرور لغات',
-        tabBarBadge: '2',
+      navigationOptions: ({navigation}) => ({
+        tabBarLabel: (
+          <Text
+            style={{
+              fontFamily: 'IRANSansMobile',
+              textAlign: 'center',
+              fontSize: 12,
+            }}>
+            مرور
+          </Text>
+        ),
+        tabBarBadge: hasReviewWord,
         tabBarIcon: ({tintColor}) => (
           <View>
             <Icon
@@ -595,12 +593,21 @@ const TabNavigator = createMaterialBottomTabNavigator(
         activeColor: 'black',
         inactiveColor: 'red',
         barStyle: {backgroundColor: Colors.background},
-      },
+      }),
     },
     PROFILE: {
       screen: ProfileStack,
       navigationOptions: {
-        tabBarLabel: 'پروفایل',
+        tabBarLabel: (
+          <Text
+            style={{
+              fontFamily: 'IRANSansMobile',
+              textAlign: 'center',
+              fontSize: 12,
+            }}>
+            پروفایل
+          </Text>
+        ),
         tabBarIcon: ({tintColor}) => (
           <View>
             <Icon
@@ -621,7 +628,7 @@ const TabNavigator = createMaterialBottomTabNavigator(
     initialRouteName: 'LEARN',
     activeColor: 'black',
     inactiveColor: 'red',
-    barStyle: {backgroundColor: 'blue', fontFamily: 'IRANSansMobile'},
+    barStyle: {backgroundColor: 'blue'},
   },
 )
 const RootNavigator = createSwitchNavigator(

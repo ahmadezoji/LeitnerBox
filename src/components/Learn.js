@@ -19,6 +19,8 @@ import LottieView from 'lottie-react-native'
 import LinearGradient from 'react-native-linear-gradient'
 import {getRootFiles} from './FileManger'
 import moment from 'moment'
+import Profile from './Profile'
+import { ASTORAGE_TIME, ASTORAGE_UNIT } from './consts'
 // const words = require('../assets/words.json')
 export default class Learn extends React.Component {
   constructor (props) {
@@ -31,7 +33,15 @@ export default class Learn extends React.Component {
   onFocusFunction = () => {
     this._onRefresh()
   }
+  async setDefault(){
+    let interval = await AsyncStorage.getItem(ASTORAGE_TIME)
+    let unit = await AsyncStorage.getItem(ASTORAGE_UNIT)
+
+    if (interval == null) await AsyncStorage.setItem(ASTORAGE_TIME, '10')
+    if (unit == null) await AsyncStorage.setItem(ASTORAGE_UNIT, 'second')
+  }
   async componentDidMount () {
+    this.setDefault();
     this.focusListener = this.props.navigation.addListener('didFocus', () => {
       this.onFocusFunction()
     })
@@ -53,29 +63,23 @@ export default class Learn extends React.Component {
           backgroundColor='transparent'
           barStyle='dark-content'
         />
-        <ScrollView
-          contentContainerStyle={{flexGrow: 1}}
-          refreshControl={
-            <RefreshControl
-              refreshing={this.state.refreshing}
-              onRefresh={this._onRefresh}
-            />
-          }>
-          <FlatList
-            virtical
-            pagingEnabled={true}
-            data={this.state.categories}
-            renderItem={this.renderCategories}
-            keyExtractor={({id}, index) => id}
-          />
-        </ScrollView>
+        <FlatList
+          virtical
+          onRefresh={() => this._onRefresh()}
+          refreshing={this.state.refreshing}
+          pagingEnabled={true}
+          data={this.state.categories}
+          renderItem={this.renderCategories}
+          keyExtractor={(item, index) => {
+            return item.id
+          }}
+        />
       </LinearGradient>
     )
   }
   renderCategories = ({item}) => {
     return (
       <TouchableOpacity
-        // onPress={() => this.props.navigation.push('words', {currentFile: item})}
         onPress={() =>
           this.props.navigation.navigate('subCategories', {
             currentFile: item,
@@ -116,7 +120,7 @@ const styles = StyleSheet.create({
 const SubCategories = ({navigation}) => {
   let [refreshing, setRefreshing] = useState(false)
   let [subCategories, setSubCategories] = useState([])
-  let categoryName = navigation.state.params.categoryName;
+  let categoryName = navigation.state.params.categoryName
 
   const _onRefresh = () => {
     setRefreshing(false)
@@ -132,7 +136,12 @@ const SubCategories = ({navigation}) => {
   const renderSubCategories = ({item}) => {
     return (
       <TouchableOpacity
-        onPress={() => navigation.push('words', {currentFile: item,categoryName:categoryName})}
+        onPress={() =>
+          navigation.push('words', {
+            currentFile: item,
+            categoryName: categoryName,
+          })
+        }
         style={{
           backgroundColor: 'red',
           justifyContent: 'center',
@@ -162,19 +171,20 @@ const SubCategories = ({navigation}) => {
         backgroundColor='transparent'
         barStyle='dark-content'
       />
-      <ScrollView
-        contentContainerStyle={{flexGrow: 1}}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={_onRefresh} />
-        }>
-        <FlatList
-          virtical
-          pagingEnabled={true}
-          data={subCategories}
-          renderItem={renderSubCategories}
-          keyExtractor={({id}, index) => id}
-        />
-      </ScrollView>
+
+      <FlatList
+        style={{flex: 1}}
+        virtical
+        onRefresh={() => _onRefresh()}
+        refreshing={refreshing}
+        pagingEnabled={true}
+        data={subCategories}
+        renderItem={renderSubCategories}
+        keyExtractor={(item, index) => {
+          return item.id
+        }}
+        ListFooterComponent={<View style={{height: 100}}/>}
+      />
     </LinearGradient>
   )
 }

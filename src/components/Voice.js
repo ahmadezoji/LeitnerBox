@@ -1,6 +1,6 @@
 import {Icon} from 'native-base'
-import React, {useState, useEffect} from 'react'
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native'
+import React, {useState, useEffect, useRef} from 'react'
+import {StyleSheet, Text, TouchableOpacity, View, Slider} from 'react-native'
 import SoundRecorder from 'react-native-sound-recorder'
 const formatNumber = number => `0${number}`.slice(-2)
 
@@ -11,13 +11,15 @@ const getRemaining = time => {
 }
 const VoicePlayer = inputpath => {
   const Sound = require('react-native-sound')
-  let whoosh = null;
+  let [player, setPlayer] = useState(null)
   let [path, setPath] = useState(inputpath)
   let [startPlay, setStartPlay] = useState(false)
   let [speed, setSpeed] = useState(0)
   const [remainingSecs, setRemainingSecs] = useState(0)
   const [isActive, setIsActive] = useState(false)
   const {mins, secs} = getRemaining(remainingSecs)
+  let [duration, setDuration] = useState(0)
+  let [currentTime, setCurrentTime] = useState(0)
 
   const reset = () => {
     setRemainingSecs(0)
@@ -25,27 +27,51 @@ const VoicePlayer = inputpath => {
   }
   useEffect(() => {
     let interval = null
-    if (isActive) {
-      interval = setInterval(() => {
-        setRemainingSecs(remainingSecs => remainingSecs + 1)
-      }, 1000)
-    } else if (!isActive && remainingSecs !== 0) {
-      clearInterval(interval)
-    }
-    return () => clearInterval(interval)
-  }, [isActive, remainingSecs])
-  const StartPlay = () => {
+    let whoosh = null
     Sound.setCategory('Playback')
-    reset()
-    setStartPlay(true)
-    setIsActive(true)
+    console.log(inputpath.inputpath);
     whoosh = new Sound(inputpath.inputpath, Sound.MAIN_BUNDLE, error => {
       if (error) {
         console.log('failed to load the sound', error)
         return
       }
-      whoosh.setSpeed(speed)
-      whoosh.play(success => {
+      whoosh.setVolume(2.5)
+      setPlayer(whoosh)
+    })
+
+    // if (player !== null) {
+    //   player.getDuration(secs => {
+    //     console.log('duration:', secs)
+    //     // setDuration(secs)
+    //   })
+    // }
+
+    if (isActive) {
+      interval = setInterval(() => {
+        setRemainingSecs(remainingSecs => remainingSecs + 1)
+        // if (player !== null) {
+        //   player.getDuration(secs => {
+        //     setDuration(secs)
+        //   })
+        //   player.getCurrentTime(seconds => {
+        //     console.log(seconds)
+        //     setCurrentTime(seconds)
+        //   })
+        // }
+      }, 1000)
+    } else if (!isActive && remainingSecs !== 0) {
+      clearInterval(interval)
+    }
+
+    return () => clearInterval(interval)
+  }, [isActive, remainingSecs])
+  const StartPlay = () => {
+    if (player !== null) {
+      reset()
+      setStartPlay(true)
+      setIsActive(true)
+      player.setSpeed(speed)
+      player.play(success => {
         if (success) {
           StopPlay()
           console.log('successfully finished playing')
@@ -53,15 +79,17 @@ const VoicePlayer = inputpath => {
           console.log('playback failed due to audio decoding errors')
         }
       })
-    })
-    whoosh.setVolume(2.5)
-    whoosh.setPan(1)
+    }
+  }
+  const pause = () => {
+    if (player === null) return
+    player.pause()
   }
   const StopPlay = () => {
     setStartPlay(false)
     setIsActive(false)
-    console.log(whoosh);
-    // whoosh.pause()
+    setCurrentTime(0)
+    pause()
   }
   let iconPlay = startPlay ? 'pause' : 'play'
   return (
@@ -75,6 +103,14 @@ const VoicePlayer = inputpath => {
             style={{textAlign: 'center', color: 'blue', fontSize: 35}}
           />
         </TouchableOpacity>
+        {/* <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+          <Slider
+            value={currentTime}
+            maximumValue={5}
+            minimumValue={0}
+            style={styles.slider}
+          />
+        </View> */}
         <TouchableOpacity
           style={styles.playBtn}
           onPress={() => (speed <= 4 ? setSpeed(speed + 1) : setSpeed(0))}>
@@ -88,10 +124,10 @@ const VoicePlayer = inputpath => {
 
 const VoiceRecorder = inputpath => {
   const Sound = require('react-native-sound')
-  let whoosh = null
+
   let [path, setPath] = useState(inputpath)
+  let [player, setPlayer] = useState(null)
   const [voiceUri, setVoiceUri] = useState('')
-  let [speed, setSpeed] = useState(0)
   const [startRecord, setStartRecord] = useState(false)
   const [startPlay, setStartPlay] = useState(false)
   const [remainingSecs, setRemainingSecs] = useState(0)
@@ -106,6 +142,16 @@ const VoiceRecorder = inputpath => {
   }
   useEffect(() => {
     let interval = null
+    let whoosh = null
+    whoosh = new Sound(inputpath.inputpath, Sound.MAIN_BUNDLE, error => {
+      if (error) {
+        console.log('failed to load the sound', error)
+        return
+      }
+    })
+    whoosh.setVolume(2.5)
+    whoosh.setPan(1)
+    setPlayer(whoosh)
     if (isActive) {
       interval = setInterval(() => {
         setRemainingSecs(remainingSecs => remainingSecs + 1)
@@ -120,13 +166,9 @@ const VoiceRecorder = inputpath => {
     reset()
     setStartPlay(true)
     setIsActive(true)
-    whoosh = new Sound(inputpath.inputpath, Sound.MAIN_BUNDLE, error => {
-      if (error) {
-        console.log('failed to load the sound', error)
-        return
-      }
-      whoosh.setSpeed(speed)
-      whoosh.play(success => {
+
+    player !== null &&
+      player.play(success => {
         if (success) {
           StopPlay()
           console.log('successfully finished playing')
@@ -134,14 +176,12 @@ const VoiceRecorder = inputpath => {
           console.log('playback failed due to audio decoding errors')
         }
       })
-    })
-    whoosh.setVolume(2.5)
-    whoosh.setPan(1)
   }
   const StopPlay = () => {
     setStartPlay(false)
     setIsActive(false)
-    // whoosh.pause()
+    console.log(player)
+    player !== null && player.stop()
   }
   const StartRecord = () => {
     reset()
@@ -168,7 +208,7 @@ const VoiceRecorder = inputpath => {
           onPress={() => (startPlay ? StopPlay() : StartPlay())}>
           <Icon
             name={iconPlay}
-            style={{textAlign: 'center', color: 'blue', fontSize: 35}}
+            style={{textAlign: 'center', color: 'red', fontSize: 35}}
           />
         </TouchableOpacity>
         <TouchableOpacity
@@ -177,7 +217,7 @@ const VoiceRecorder = inputpath => {
           <Icon
             name={iconRecord}
             type={'MaterialCommunityIcons'}
-            style={{textAlign: 'center', color: 'blue', fontSize: 35}}
+            style={{textAlign: 'center', color: 'red', fontSize: 35}}
           />
         </TouchableOpacity>
       </View>
@@ -191,29 +231,38 @@ export {VoicePlayer, VoiceRecorder}
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'column',
-    backgroundColor: 'red',
+    backgroundColor: 'white',
     margin: 20,
-    width: 200,
-    height: 70,
+    width: 100,
+    height: 60,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: 'black',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.9,
+    shadowRadius: 3,
+    elevation: 3,
   },
   playBtn: {
-    backgroundColor: 'red',
+    backgroundColor: 'white',
     borderColor: 'white',
     borderWidth: 2,
     borderRadius: 25,
-    width: 50,
-    height: 50,
+    width: 35,
+    height: 35,
     margin: 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
   timerText: {
-    color: 'white',
+    color: 'black',
     fontSize: 10,
     textAlign: 'center',
     textAlignVertical: 'center',
+  },
+  slider: {
+    width: 100,
+    height: 10,
   },
 })

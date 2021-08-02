@@ -16,6 +16,7 @@ import {
   TextInput,
   PermissionsAndroid,
   Platform,
+  Alert,
 } from 'react-native'
 import LottieView from 'lottie-react-native'
 import LinearGradient from 'react-native-linear-gradient'
@@ -35,17 +36,27 @@ import moment from 'moment'
 import {VoiceRecorder} from './Voice'
 
 const addSubCategory = ({navigation}) => {
-  const [subCategoryName, setSubCategoryName] = useState('')
+  let [subCategoryName, setSubCategoryName] = useState('')
+  let [coefTime, setCoefTime] = useState('1.2')
   let categoryName = navigation.state.params.categoryName
-  console.log(categoryName)
-  const save = () => {
+  const save = async () => {
+    if (
+      subCategoryName == null ||
+      subCategoryName == '' ||
+      parseFloat(coefTime) == null
+    ) {
+      Alert.alert('نام زیر گروه نباید خالی باشد')
+      return
+    }
     var obj = []
     createSubCategory(categoryName, subCategoryName, result => {
       if (result) {
         let path = categoryName + '/' + subCategoryName
-        console.log(path)
         writeToFile(path, subCategoryName + '.json', obj, result => {
-          if (result) navigation.navigate('learn')
+          if (result) {
+            AsyncStorage.setItem(path, coefTime)
+            navigation.navigate('learn')
+          }
         })
       }
     })
@@ -60,6 +71,19 @@ const addSubCategory = ({navigation}) => {
         onChangeText={text => setSubCategoryName(text)}
         defaultValue={subCategoryName}
       />
+      <View style={{flexDirection: 'row'}}>
+        <TextInput
+          style={styles.InputTextCoef}
+          placeholder='ضریب'
+          keyboardType='numeric'
+          onChangeText={text => {
+            setCoefTime(text)
+          }}
+          value={coefTime}
+          defaultValue={coefTime}
+        />
+        <Text style={styles.lableText}>(s)ضریب زمان پاسخگویی</Text>
+      </View>
       <TouchableOpacity style={styles.NextBtn} onPress={() => save()}>
         <Text style={styles.textBtn}>ذخیره</Text>
       </TouchableOpacity>
@@ -70,9 +94,14 @@ const addCategory = ({navigation}) => {
   const [categoryName, setCategoryName] = useState('')
 
   const save = () => {
+    if (categoryName == null || categoryName == '') {
+      Alert.alert('نام گروه نباید خالی باشد')
+      return
+    }
     createCategory(categoryName, result => {
       if (result)
-        navigation.navigate('addSubCategory', {categoryName: categoryName})
+        // navigation.push('addSubCategory', {categoryName: categoryName})
+        navigation.navigate('learn')
     })
   }
   return (
@@ -177,12 +206,14 @@ const addCard3 = ({navigation}) => {
   const chooseFile = () => {
     picker((source, data) => {
       // console.log(navigation.state.params.currentFile.path)
+      // console.log(source)
+      if (source == null) return
+      console.log(source.uri);
       let newPath =
         navigation.state.params.currentFile.path +
         '/' +
         navigation.state.params.word +
         '.jpg'
-      console.log(newPath)
       copyFile(source.uri, newPath, result => {
         if (result) {
           setImgUri(newPath)
@@ -190,11 +221,14 @@ const addCard3 = ({navigation}) => {
         }
       })
     })
+
+    console.log('local:',imgUri);
   }
   const saveCard = async () => {
     let interval = await AsyncStorage.getItem('intervalTime') //hour
     let unit = await AsyncStorage.getItem('intervalTimeUnit') //hour
 
+    console.log(navigation.state.params)
     let word = {
       englishWord: navigation.state.params.word,
       meaning: navigation.state.params.meaning,
@@ -202,13 +236,17 @@ const addCard3 = ({navigation}) => {
       imgUri: navigation.state.params.imgUri,
       voiceUri1: navigation.state.params.voice1Path,
       voiceUri2: navigation.state.params.voice2Path,
+      coefTime: navigation.state.params.coefTime,
       readDate: 'null',
       nextReviewDate: 'null',
       position: -1,
     }
 
     const newToDoList = [...navigation.state.params.words, word]
-    let path = navigation.state.params.categoryName + '/' + navigation.state.params.currentFile.name;
+    let path =
+      navigation.state.params.categoryName +
+      '/' +
+      navigation.state.params.currentFile.name
     writeToFile(
       path,
       navigation.state.params.currentFile.name + '.json',
@@ -255,54 +293,11 @@ const addCard3 = ({navigation}) => {
       <TouchableOpacity style={styles.NextBtn} onPress={() => saveCard()}>
         <Text style={styles.textBtn}>ذخیره</Text>
       </TouchableOpacity>
-      {/* <TouchableOpacity
-        style={styles.NextBtn}
-        onPress={() => navigation.push('addCard4', navigation.state.params)}>
-        <Text style={styles.textBtn}>بعدی</Text>
-      </TouchableOpacity> */}
     </LinearGradient>
   )
 }
 
-const addCard4 = ({navigation}) => {
-  const [voiceUri, setVoiceUri] = useState(
-    navigation.state.params.word + '2.mp3',
-  )
-  let path =
-    navigation.state.params.currentFile.path +
-    '/' +
-    navigation.state.params.word +
-    '2.mp3'
-
-  return (
-    <LinearGradient
-      colors={['#4c669f', '#3b5998', '#192f6a']}
-      style={styles.linearGradient}>
-      <Text style={styles.TitleText}>{navigation.state.params.word}</Text>
-      {navigation.state.params.meaning.map((item, index) => (
-        <Text style={styles.meaningText} key={index}>
-          {item}
-        </Text>
-      ))}
-      <Text style={styles.TitleText}>{navigation.state.params.example}</Text>
-      <Image
-        source={{
-          uri:
-            'file://' +
-            navigation.state.params.currentFile.path +
-            '/' +
-            navigation.state.params.imgUri,
-        }}
-        style={styles.wordImage}
-      />
-      <VoiceRecorder inputpath={path} />
-      <TouchableOpacity style={styles.NextBtn} onPress={() => saveCard()}>
-        <Text style={styles.textBtn}>ذخیره</Text>
-      </TouchableOpacity>
-    </LinearGradient>
-  )
-}
-export {addCard1, addCard2, addCard3, addCard4, addCategory, addSubCategory}
+export {addCard1, addCard2, addCard3, addCategory, addSubCategory}
 const requestMicrophone = async () => {
   //replace your function with this code.
   if (Platform.OS === 'android') {
@@ -336,13 +331,21 @@ export default class AddCard extends React.Component {
       text: '',
       showWarning: false,
       voice1Path: '',
+      coefTime: '1.2',
     }
   }
   async componentDidMount () {
     requestMicrophone()
 
-    // console.log(this.props.navigation.state.params);
-    // console.log( this.props.navigation.state.params.currentFile);
+    let path =
+      this.props.navigation.state.params.categoryName +
+      '/' +
+      this.props.navigation.state.params.currentFile.name
+    let val = await AsyncStorage.getItem(path)
+    await this.setState({coefTime: val})
+    this.props.navigation.setParams({coefTime: val})
+
+    console.log( this.props.navigation);
   }
   render () {
     return (
@@ -367,6 +370,19 @@ export default class AddCard extends React.Component {
           }}
           defaultValue={this.state.text}
         />
+        <View style={{flexDirection: 'row'}}>
+          <TextInput
+            style={styles.InputTextCoef}
+            placeholder='ضریب'
+            onChangeText={text => {
+              this.setState({coefTime: text})
+              this.props.navigation.setParams({coefTime: this.state.coefTime})
+            }}
+            value={this.state.coefTime}
+            defaultValue={this.state.coefTime}
+          />
+          <Text style={styles.lableText}>(s)ضریب زمان پاسخگویی</Text>
+        </View>
         {this.state.text !== '' && (
           <VoiceRecorder inputpath={this.state.voice1Path} />
         )}
@@ -433,6 +449,20 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: 'white',
     margin: 10,
+    fontFamily: 'IRANSansMobile',
+  },
+  InputTextCoef: {
+    borderRadius: 2,
+    backgroundColor: 'white',
+    margin: 10,
+    fontFamily: 'IRANSansMobile',
+    textAlign: 'center',
+  },
+  lableText: {
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    color: 'red',
+    fontSize: 15,
     fontFamily: 'IRANSansMobile',
   },
   BrowserPath: {
