@@ -28,6 +28,7 @@ import ReviewCard, {MyTimer} from './components/ReviewCard'
 import ReviewWords, {getReviewWords} from './components/ReviewWords'
 import {writeToFile} from './components/FileManger'
 import AsyncStorage from '@react-native-community/async-storage'
+import {EditCard} from './components/Edit'
 
 // --------------------------------------------
 const MyTransitionToDown = {
@@ -244,7 +245,7 @@ const LearnStack = createStackNavigator(
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() =>
-                navigation.push('addCard', navigation.state.params)
+                navigation.push('editCard', navigation.state.params)
               }>
               <Icon
                 name='edit'
@@ -296,6 +297,18 @@ const LearnStack = createStackNavigator(
             </TouchableOpacity>
           </View>
         ),
+      }),
+    },
+    editCard: {
+      screen: EditCard,
+      navigationOptions: ({navigation}) => ({
+        headerShown: true,
+        ...MyTransitionToLeft,
+        headerTitleStyle: {
+          fontFamily: 'IRANSansMobile_Bold',
+          textAlign: 'center',
+        },
+        headerTitle: 'ویرایش کارت',
       }),
     },
     words: {
@@ -460,6 +473,50 @@ const LearnStack = createStackNavigator(
             </TouchableOpacity>
           </View>
         ),
+      }),
+    },
+    addCard: {
+      screen: AddCard,
+      navigationOptions: ({navigation}) => ({
+        headerShown: true,
+        ...MyTransitionToLeft,
+        headerTitleStyle: {
+          fontFamily: 'IRANSansMobile_Bold',
+          textAlign: 'center',
+        },
+      }),
+    },
+    addCard1: {
+      screen: addCard1,
+      navigationOptions: ({navigation}) => ({
+        headerShown: true,
+        ...MyTransitionToLeft,
+        headerTitleStyle: {
+          fontFamily: 'IRANSansMobile_Bold',
+          textAlign: 'center',
+        },
+      }),
+    },
+    addCard2: {
+      screen: addCard2,
+      navigationOptions: ({navigation}) => ({
+        headerShown: true,
+        ...MyTransitionToLeft,
+        headerTitleStyle: {
+          fontFamily: 'IRANSansMobile_Bold',
+          textAlign: 'center',
+        },
+      }),
+    },
+    addCard3: {
+      screen: addCard3,
+      navigationOptions: ({navigation}) => ({
+        headerShown: true,
+        ...MyTransitionToLeft,
+        headerTitleStyle: {
+          fontFamily: 'IRANSansMobile_Bold',
+          textAlign: 'center',
+        },
       }),
     },
   },
@@ -635,7 +692,7 @@ const RootNavigator = createSwitchNavigator(
   {
     Splash: Splash,
     Main: TabNavigator,
-    AddCard: AddCardStack,
+    // AddCard: AddCardStack,
     AddCategoryStack: AddCategoryStack,
   },
   {

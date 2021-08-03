@@ -29,36 +29,30 @@ const VoicePlayer = inputpath => {
     let interval = null
     let whoosh = null
     Sound.setCategory('Playback')
-    console.log(inputpath.inputpath);
     whoosh = new Sound(inputpath.inputpath, Sound.MAIN_BUNDLE, error => {
       if (error) {
         console.log('failed to load the sound', error)
         return
       }
-      whoosh.setVolume(2.5)
+      if (whoosh._loaded) {
+        whoosh.setVolume(2.5)
+        // whoosh.setPan(1)
+        // whoosh.setNumberOfLoops(-1)
+      }
+      setDuration(whoosh.getDuration())
       setPlayer(whoosh)
     })
 
-    // if (player !== null) {
-    //   player.getDuration(secs => {
-    //     console.log('duration:', secs)
-    //     // setDuration(secs)
-    //   })
-    // }
-
     if (isActive) {
       interval = setInterval(() => {
-        setRemainingSecs(remainingSecs => remainingSecs + 1)
-        // if (player !== null) {
-        //   player.getDuration(secs => {
-        //     setDuration(secs)
-        //   })
-        //   player.getCurrentTime(seconds => {
-        //     console.log(seconds)
-        //     setCurrentTime(seconds)
-        //   })
-        // }
-      }, 1000)
+        // setRemainingSecs(remainingSecs => remainingSecs + 1)
+        player.getCurrentTime(seconds => {
+          if (interval) {
+            setCurrentTime(seconds)
+          }
+        })
+        // player.pause(success => console.log(success))
+      }, 100)
     } else if (!isActive && remainingSecs !== 0) {
       clearInterval(interval)
     }
@@ -81,43 +75,42 @@ const VoicePlayer = inputpath => {
       })
     }
   }
-  const pause = () => {
-    if (player === null) return
-    player.pause()
-  }
   const StopPlay = () => {
     setStartPlay(false)
     setIsActive(false)
-    setCurrentTime(0)
-    pause()
+    player.pause()
   }
   let iconPlay = startPlay ? 'pause' : 'play'
   return (
     <View style={styles.container}>
-      <View style={{flexDirection: 'row'}}>
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
         <TouchableOpacity
           style={styles.playBtn}
           onPress={() => (startPlay ? StopPlay() : StartPlay())}>
           <Icon
             name={iconPlay}
-            style={{textAlign: 'center', color: 'blue', fontSize: 35}}
+            style={{textAlign: 'center', color: 'blue', fontSize: 30}}
           />
         </TouchableOpacity>
-        {/* <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-          <Slider
-            value={currentTime}
-            maximumValue={5}
-            minimumValue={0}
-            style={styles.slider}
-          />
-        </View> */}
+        <Slider
+          value={currentTime}
+          maximumValue={duration}
+          minimumValue={0}
+          style={styles.slider}
+        />
         <TouchableOpacity
-          style={styles.playBtn}
+          style={styles.speedBtn}
           onPress={() => (speed <= 4 ? setSpeed(speed + 1) : setSpeed(0))}>
           <Text style={{color: 'black', fontSize: 15}}>x{speed}</Text>
         </TouchableOpacity>
       </View>
-      <Text style={styles.timerText}>{`${mins}:${secs}`}</Text>
+      {/* <Text style={styles.timerText}>{`${mins}:${secs}`}</Text> */}
+      <Text style={styles.timerText}>{`${currentTime.toFixed(2)} s`}</Text>
     </View>
   )
 }
@@ -233,7 +226,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     backgroundColor: 'white',
     margin: 20,
-    width: 100,
+    width: 200,
     height: 60,
     borderRadius: 10,
     justifyContent: 'center',
@@ -255,14 +248,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  speedBtn: {
+    backgroundColor: 'white',
+    borderColor: 'blue',
+    borderWidth: 1,
+    borderRadius: 5,
+    width: 30,
+    height: 30,
+    margin: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   timerText: {
     color: 'black',
-    fontSize: 10,
+    fontSize: 12,
     textAlign: 'center',
     textAlignVertical: 'center',
   },
   slider: {
-    width: 100,
+    width: 120,
     height: 10,
+    margin: 1,
   },
 })

@@ -151,7 +151,6 @@ export default class Card extends React.Component {
   render () {
     let size = Object.keys(this.props.navigation.state.params.words).length
     let index = this.props.navigation.state.params.index + 1
-    console.log(this.state.pathVoice2);
     return (
       <LinearGradient
         colors={['#4c669f', '#3b5998', '#192f6a']}
