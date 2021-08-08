@@ -7,28 +7,22 @@ import {
   TransitionSpecs,
   HeaderStyleInterpolators,
 } from 'react-navigation-stack'
-import Learn, {SubCategories} from './components/Learn'
+import Learn, {Lessons, SubCategories} from './components/Learn'
 import Profile from './components/Profile'
-import Review, {ReviewSubCategories} from './components/Review'
+import Review, {ReviewLessons, ReviewSubCategories} from './components/Review'
 import Splash from './components/Spalsh'
 import {Colors} from './components/Colors'
 import {Root, Icon} from 'native-base'
 import {Alert, Text, TouchableOpacity, View} from 'react-native'
 import Words, {shareToFiles} from './components/Words'
 import Card from './components/Card'
-import AddCard, {
-  addCard1,
-  addCard2,
-  addCard3,
-  addCategory,
-  addSubCategory,
-} from './components/Add'
 import {deletFile} from './components/FileManger'
 import ReviewCard, {MyTimer} from './components/ReviewCard'
 import ReviewWords, {getReviewWords} from './components/ReviewWords'
 import {writeToFile} from './components/FileManger'
 import AsyncStorage from '@react-native-community/async-storage'
-import {EditCard} from './components/Edit'
+import {EditCard, editSubCategory} from './components/Edit'
+import {AddCard, addCategory, addLesson, addSubCategory} from './components/Add'
 
 // --------------------------------------------
 const MyTransitionToDown = {
@@ -107,7 +101,12 @@ const ReviewStack = createStackNavigator(
         headerTitle: '',
         headerRight: () =>
           navigation.state.params.timer && (
-            <View style={{justifyContent: 'center', alignItems: 'center'}}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
               <Text
                 style={{
                   color: 'black',
@@ -116,6 +115,32 @@ const ReviewStack = createStackNavigator(
                 }}>
                 {navigation.state.params.timer}
               </Text>
+              {navigation.state.params.index + 1 <
+                Object.keys(navigation.state.params.indexs).length && (
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: 'transparent',
+                    justifyContent: 'center',
+                    margin: 5,
+                  }}
+                  onPress={() => {
+                    if (
+                      navigation.state.params.index + 1 <
+                      Object.keys(navigation.state.params.words).length
+                    ) {
+                      ;(navigation.state.params.index =
+                        navigation.state.params.indexs[
+                          navigation.state.params.index + 1
+                        ]),
+                        navigation.replace(
+                          'reviewcard',
+                          navigation.state.params,
+                        )
+                    }
+                  }}>
+                  <Icon name='stepforward' type='AntDesign' />
+                </TouchableOpacity>
+              )}
             </View>
           ),
       }),
@@ -185,6 +210,18 @@ const ReviewStack = createStackNavigator(
         ),
       }),
     },
+    reviewLessons: {
+      screen: ReviewLessons,
+      navigationOptions: ({navigation}) => ({
+        ...MyTransitionToLeft,
+        headerShown: true,
+        headerTitleStyle: {
+          fontFamily: 'IRANSansMobile_Bold',
+          textAlign: 'center',
+        },
+        headerTitle: navigation.state.params.currentFile.name.split('.')[0],
+      }),
+    },
   },
   {
     defaultNavigationOptions: {
@@ -209,8 +246,7 @@ const LearnStack = createStackNavigator(
         headerTitle: 'آموزش',
         headerRight: () => (
           <View style={{flexDirection: 'row', marginRight: 2}}>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('addCategory')}>
+            <TouchableOpacity onPress={() => navigation.push('addCategory')}>
               <Icon
                 name='add-outline'
                 type='Ionicons'
@@ -244,6 +280,11 @@ const LearnStack = createStackNavigator(
               />
             </TouchableOpacity>
             <TouchableOpacity
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: 2,
+              }}
               onPress={() =>
                 navigation.push('editCard', navigation.state.params)
               }>
@@ -276,13 +317,15 @@ const LearnStack = createStackNavigator(
                       let path =
                         navigation.state.params.categoryName +
                         '/' +
+                        navigation.state.params.subCategoryName +
+                        '/' +
                         navigation.state.params.currentFile.name
                       writeToFile(
                         path,
                         navigation.state.params.currentFile.name + '.json',
                         navigation.state.params.words,
                         result => {
-                          if (result) navigation.navigate('learn')
+                          if (result) navigation.goBack()
                         },
                       )
                     },
@@ -295,6 +338,26 @@ const LearnStack = createStackNavigator(
                 style={{color: 'black', fontSize: 25}}
               />
             </TouchableOpacity>
+            {navigation.state.params.index + 1 <
+              Object.keys(navigation.state.params.words).length && (
+              <TouchableOpacity
+                style={{
+                  backgroundColor: 'transparent',
+                  justifyContent: 'center',
+                }}
+                onPress={() => {
+                  if (
+                    navigation.state.params.index + 1 <
+                    Object.keys(navigation.state.params.words).length
+                  ) {
+                    ;(navigation.state.params.index =
+                      navigation.state.params.index + 1),
+                      navigation.replace('card', navigation.state.params)
+                  }
+                }}>
+                <Icon name='stepforward' type='AntDesign' />
+              </TouchableOpacity>
+            )}
           </View>
         ),
       }),
@@ -343,6 +406,22 @@ const LearnStack = createStackNavigator(
                 }}
               />
             </TouchableOpacity>
+            {/* <TouchableOpacity
+              TouchableOpacity
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: 2,
+              }}
+              onPress={() =>
+                navigation.push('editSubCategory', navigation.state.params)
+              }>
+              <Icon
+                name='edit'
+                type='MaterialIcons'
+                style={{color: 'black', fontSize: 25}}
+              />
+            </TouchableOpacity> */}
             <TouchableOpacity
               style={{
                 alignItems: 'center',
@@ -350,7 +429,7 @@ const LearnStack = createStackNavigator(
                 margin: 2,
               }}
               onPress={() => {
-                Alert.alert('حذف زیر گروه', 'آیا با حذف زیر گروه موافقید ؟', [
+                Alert.alert('حذف درس', 'آیا با حذف درس موافقید ؟', [
                   {
                     text: 'خیر',
                     onPress: () => console.log('Cancel Pressed'),
@@ -484,48 +563,9 @@ const LearnStack = createStackNavigator(
           fontFamily: 'IRANSansMobile_Bold',
           textAlign: 'center',
         },
+        headerTitle: 'اضافه کردن کارت',
       }),
     },
-    addCard1: {
-      screen: addCard1,
-      navigationOptions: ({navigation}) => ({
-        headerShown: true,
-        ...MyTransitionToLeft,
-        headerTitleStyle: {
-          fontFamily: 'IRANSansMobile_Bold',
-          textAlign: 'center',
-        },
-      }),
-    },
-    addCard2: {
-      screen: addCard2,
-      navigationOptions: ({navigation}) => ({
-        headerShown: true,
-        ...MyTransitionToLeft,
-        headerTitleStyle: {
-          fontFamily: 'IRANSansMobile_Bold',
-          textAlign: 'center',
-        },
-      }),
-    },
-    addCard3: {
-      screen: addCard3,
-      navigationOptions: ({navigation}) => ({
-        headerShown: true,
-        ...MyTransitionToLeft,
-        headerTitleStyle: {
-          fontFamily: 'IRANSansMobile_Bold',
-          textAlign: 'center',
-        },
-      }),
-    },
-  },
-  {
-    initialRouteName: 'learn',
-  },
-)
-const AddCategoryStack = createStackNavigator(
-  {
     addCategory: {
       screen: addCategory,
       navigationOptions: ({navigation}) => ({
@@ -544,37 +584,95 @@ const AddCategoryStack = createStackNavigator(
         ...MyTransitionToLeft,
       }),
     },
-  },
-  // {
-  //   defaultNavigationOptions: {
-  //     headerShown: true,
-  //     headerTitleStyle: {fontFamily: 'IRANSansMobile_Bold'},
-  //     headerTitle: 'اضافه کردن گروه',
-  //     ...MyTransitionToLeft,
-  //   },
-  // },
-  {
-    initialRouteName: 'addCategory',
-  },
-)
-
-const AddCardStack = createStackNavigator(
-  {
-    addCard: AddCard,
-    addCard1: addCard1,
-    addCard2: addCard2,
-    addCard3: addCard3,
-  },
-  {
-    defaultNavigationOptions: {
-      headerShown: true,
-      ...MyTransitionToLeft,
-      headerTitleStyle: {fontFamily: 'IRANSansMobile_Bold'},
-      headerTitle: 'اضافه کردن کارت',
+    editSubCategory: {
+      screen: editSubCategory,
+      navigationOptions: ({navigation}) => ({
+        headerShown: true,
+        ...MyTransitionToLeft,
+        headerTitleStyle: {
+          fontFamily: 'IRANSansMobile_Bold',
+          textAlign: 'center',
+        },
+        headerTitle: 'ویرایش زیر گروه',
+      }),
+    },
+    lessons: {
+      screen: Lessons,
+      navigationOptions: ({navigation}) => ({
+        ...MyTransitionToLeft,
+        headerShown: true,
+        headerTitleStyle: {
+          fontFamily: 'IRANSansMobile_Bold',
+          textAlign: 'center',
+        },
+        headerTitle: navigation.state.params.currentFile.name.split('.')[0],
+        headerRight: () => (
+          <View style={{flexDirection: 'row', marginRight: 2}}>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.push('addLesson', {
+                  categoryName: navigation.state.params.categoryName,
+                  subCategoryName: navigation.state.params.currentFile.name,
+                })
+              }>
+              <Icon
+                name='add-outline'
+                type='Ionicons'
+                style={{color: 'black', fontSize: 30}}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: 2,
+              }}
+              onPress={() => {
+                Alert.alert('حذف زیر گروه', 'آیا با حذف زیر گروه موافقید ؟', [
+                  {
+                    text: 'خیر',
+                    onPress: () => console.log('Cancel Pressed'),
+                    style: 'cancel',
+                  },
+                  {
+                    text: 'بله',
+                    onPress: () =>
+                      deletFile(
+                        navigation.state.params.currentFile.path,
+                        result => {
+                          if (result) navigation.goBack()
+                        },
+                      ),
+                  },
+                ])
+              }}>
+              <Icon
+                name='delete'
+                type='AntDesign'
+                style={{
+                  color: 'black',
+                  fontSize: 25,
+                  textAlignVertical: 'center',
+                  textAlign: 'center',
+                }}
+              />
+            </TouchableOpacity>
+          </View>
+        ),
+      }),
+    },
+    addLesson: {
+      screen: addLesson,
+      navigationOptions: ({navigation}) => ({
+        headerShown: true,
+        headerTitleStyle: {fontFamily: 'IRANSansMobile_Bold'},
+        headerTitle: 'اضافه کردن درس',
+        ...MyTransitionToLeft,
+      }),
     },
   },
   {
-    initialRouteName: 'addCard',
+    initialRouteName: 'learn',
   },
 )
 
@@ -692,8 +790,6 @@ const RootNavigator = createSwitchNavigator(
   {
     Splash: Splash,
     Main: TabNavigator,
-    // AddCard: AddCardStack,
-    AddCategoryStack: AddCategoryStack,
   },
   {
     initialRouteName: 'Splash',

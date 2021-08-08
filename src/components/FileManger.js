@@ -60,6 +60,17 @@ const createSubCategory = (categoryName, subCategoryName, callback) => {
     RNFS.ExternalDirectoryPath + '/' + categoryName + '/' + subCategoryName
   RNFS.mkdir(path).then(result => callback(true))
 }
+const createLesson = (categoryName, subCategoryName, lessonName, callback) => {
+  let path =
+    RNFS.ExternalDirectoryPath +
+    '/' +
+    categoryName +
+    '/' +
+    subCategoryName +
+    '/' +
+    lessonName
+  RNFS.mkdir(path).then(result => callback(true))
+}
 const copyFile = (lastPath, newPath, callback) => {
   RNFS.copyFile(lastPath, newPath)
     .then(val => callback(true))
@@ -98,5 +109,6 @@ export {
   deletFile,
   createCategory,
   createSubCategory,
+  createLesson,
   copyFile,
 }

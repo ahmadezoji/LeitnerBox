@@ -23,8 +23,15 @@ import moment from 'moment'
 import {Icon} from 'native-base'
 import {VoicePlayer} from './Voice'
 import Tts from 'react-native-tts'
-let RNFS = require('react-native-fs')
 
+const appendText = array => {
+  let text = ''
+  for (let i = 0; i < array.length; i++) {
+    if (i !== array.length - 1) text = text + array[i] + ','
+    else text = text + array[i]
+  }
+  return text
+}
 const TTSBox = inputText => {
   let [speed, setSpeed] = useState(6)
   let [text, setText] = useState(inputText.inputText)
@@ -61,6 +68,7 @@ const TTSBox = inputText => {
   useEffect(() => {
     setText(inputText.inputText)
     Tts.setDefaultRate(speed / 10)
+    Tts.setDefaultLanguage('fr');
   })
   const play = () => {
     try {
@@ -96,8 +104,6 @@ export default class Card extends React.Component {
         duration: 0,
         playerSpeed: 1.0,
         loaded: false,
-        pathVoice1: '',
-        pathVoice2: '',
       })
   }
   async componentDidMount () {
@@ -106,22 +112,7 @@ export default class Card extends React.Component {
 
     await this.setState({word: words[index], loaded: true})
 
-    if (this.state.word !== null) {
-      let path = this.props.navigation.state.params.currentFile.path
-      RNFS.exists(path).then(result => {
-        if (result) {
-          this.setState({
-            pathVoice1: path + '/' + this.state.word.voiceUri1,
-            pathVoice2: path + '/' + this.state.word.voiceUri2,
-          })
-        }
-      })
-    }
-
-    // console.log(String(this.state.word.meaning[0]));
-
-    let interval = await AsyncStorage.getItem('intervalTime') //minute
-    let unit = await AsyncStorage.getItem('intervalTimeUnit') //minute
+    console.log(this.state.word);
 
     if (this.props.navigation.state.params.words[index].readDate == 'null') {
       console.log('start card')
@@ -136,6 +127,8 @@ export default class Card extends React.Component {
     let path =
       this.props.navigation.state.params.categoryName +
       '/' +
+      this.props.navigation.state.params.subCategoryName +
+      '/' +
       this.props.navigation.state.params.currentFile.name
     writeToFile(
       path,
@@ -149,8 +142,7 @@ export default class Card extends React.Component {
     )
   }
   render () {
-    let size = Object.keys(this.props.navigation.state.params.words).length
-    let index = this.props.navigation.state.params.index + 1
+    let path = this.props.navigation.state.params.currentFile.path
     return (
       <LinearGradient
         colors={['#4c669f', '#3b5998', '#192f6a']}
@@ -160,41 +152,21 @@ export default class Card extends React.Component {
           contentContainerStyle={{flexGrow: 1}}
           showsVerticalScrollIndicator={false}>
           {this.state.word && (
-            <View
-              style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-              <TTSBox inputText={this.state.word.englishWord} />
-              <View style={{flexDirection: 'row'}}>
-                <Text style={styles.TitleText}>
-                  {this.state.word.englishWord}
-                </Text>
-                {index < size && (
-                  <TouchableOpacity
-                    style={styles.NextBtn}
-                    onPress={() => {
-                      if (index < size) {
-                        ;(this.props.navigation.state.params.index = index),
-                          this.props.navigation.replace(
-                            'card',
-                            this.props.navigation.state.params,
-                          )
-                      }
-                    }}>
-                    {/* <Text style={styles.textBtn}>>|</Text> */}
-                    <Icon name='stepforward' type='AntDesign' />
-                  </TouchableOpacity>
-                )}
-              </View>
-              {this.state.pathVoice1 !== '' && (
-                <VoicePlayer inputpath={this.state.pathVoice1} />
-              )}
-              <Text style={styles.meaningText} key={index}>
-                {this.state.word.meaning}
+            <View style={styles.container}>
+              <Text style={styles.TitleText}>
+                {this.state.word.englishWord}
               </Text>
-              <TTSBox inputText={this.state.word.example} />
+              <TTSBox inputText={this.state.word.englishWord} />
+              <VoicePlayer inputpath={path + '/' + this.state.word.voiceUri1} />
+
+              <Text style={styles.meaningText}>{this.state.word.meaning}</Text>
+              <TTSBox inputText={this.state.word.meaning} />
+              <VoicePlayer inputpath={path + '/' + this.state.word.voiceUri2} />
+
               <Text style={styles.exampleText}>{this.state.word.example}</Text>
-              {this.state.pathVoice2 !== '' && (
-                <VoicePlayer inputpath={this.state.pathVoice2} />
-              )}
+              <TTSBox inputText={this.state.word.example} />
+              <VoicePlayer inputpath={path + '/' + this.state.word.voiceUri3} />
+
               <Image
                 source={{
                   uri:
@@ -205,6 +177,10 @@ export default class Card extends React.Component {
                 }}
                 style={styles.wordImage}
               />
+              <Text style={styles.reviewDate}>
+                {this.state.word.nextReviewDate}
+              </Text>
+              <Text style={styles.position}>{this.state.word.position}</Text>
             </View>
           )}
         </ScrollView>
@@ -244,6 +220,12 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 50,
   },
   TitleText: {
     color: 'black',
@@ -308,4 +290,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     margin: 10,
   },
+  reviewDate: {
+    color: 'green',
+    fontFamily: 'IRANSansMobile',
+    fontSize: 12,
+  },
+  position: {
+    color: 'green',
+    fontFamily: 'IRANSansMobile',
+    fontSize: 12,
+  },
 })
+
+export {TTSBox}

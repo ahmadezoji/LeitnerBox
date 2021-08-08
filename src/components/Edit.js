@@ -17,7 +17,10 @@ import {
   PermissionsAndroid,
   Platform,
   Alert,
+  Picker,
 } from 'react-native'
+import Toast from 'react-native-simple-toast'
+
 import LottieView from 'lottie-react-native'
 import LinearGradient from 'react-native-linear-gradient'
 import {Icon} from 'native-base'
@@ -34,6 +37,7 @@ import {
 } from './FileManger'
 import moment from 'moment'
 import {VoiceRecorder} from './Voice'
+import {QUESTION_CASE} from './consts'
 
 const appendText = array => {
   let text = ''
@@ -42,6 +46,101 @@ const appendText = array => {
     else text = text + array[i]
   }
   return text
+}
+
+const editSubCategory = ({navigation}) => {
+  let [subCategoryName, setSubCategoryName] = useState(
+    navigation.state.params.currentFile.name,
+  )
+  let [coefTime, setCoefTime] = useState('1.2')
+  let [questionCase, setQuestionCase] = useState(0)
+  let categoryName = navigation.state.params.categoryName
+
+  useEffect(() => {
+    loadSettings()
+  })
+  const loadSettings = async () => {
+    let key =
+      navigation.state.params.categoryName +
+      '/' +
+      navigation.state.params.currentFile.name
+
+    let array = await AsyncStorage.getItem(key) //داده های پیش فرض کتاب
+    let defaultCoef = JSON.parse(array)[0]
+    let defaultQuestionCase = JSON.parse(array)[1]
+    if (defaultCoef !== null || defaultCoef !== undefined) {
+      setCoefTime(defaultCoef)
+    }
+    if (defaultQuestionCase !== null || defaultQuestionCase !== undefined) {
+      setQuestionCase(parseInt(defaultQuestionCase))
+    }
+  }
+
+  const save = async () => {
+    Toast.show('این امکان فعلا وجود ندارد')
+    // if (
+    //   subCategoryName == null ||
+    //   subCategoryName == '' ||
+    //   parseFloat(coefTime) == null
+    // ) {
+    //   Alert.alert('نام زیر گروه نباید خالی باشد')
+    //   return
+    // }
+    // var obj = []
+    // createSubCategory(categoryName, subCategoryName, result => {
+    //   if (result) {
+    //     let path = categoryName + '/' + subCategoryName
+    //     writeToFile(path, subCategoryName + '.json', obj, result => {
+    //       if (result) {
+    //         let array = [coefTime, questionCase]
+    //         AsyncStorage.setItem(path, JSON.stringify(array))
+    //         navigation.navigate('learn')
+    //       }
+    //     })
+    //   }
+    // })
+  }
+  return (
+    <LinearGradient
+      colors={['#4c669f', '#3b5998', '#192f6a']}
+      style={styles.linearGradient}>
+      <TextInput
+        style={styles.InputText}
+        placeholder='نام زیر گروه رو وارد کنید '
+        onChangeText={text => setSubCategoryName(text)}
+        defaultValue={subCategoryName}
+      />
+      <View style={{flexDirection: 'row'}}>
+        <TextInput
+          style={styles.InputTextCoef}
+          placeholder='ضریب'
+          keyboardType='numeric'
+          onChangeText={text => {
+            setCoefTime(text)
+          }}
+          value={coefTime}
+          defaultValue={coefTime}
+        />
+        <Text style={styles.lableText}>(s)ضریب زمان پاسخگویی</Text>
+      </View>
+      <View style={{flexDirection: 'row'}}>
+        <Picker
+          defaultValue={questionCase}
+          selectedValue={questionCase}
+          style={styles.picker}
+          onValueChange={(itemValue, itemIndex) => setQuestionCase(itemValue)}>
+          <Picker.Item label='پرسش' value={QUESTION_CASE.englishWord} />
+          <Picker.Item label='پاسخ' value={QUESTION_CASE.meaning} />
+          <Picker.Item label='نمونه' value={QUESTION_CASE.example} />
+          <Picker.Item label='عکس' value={QUESTION_CASE.image} />
+        </Picker>
+        <Text style={styles.lableText}>مورد پرسش</Text>
+      </View>
+      <TouchableOpacity style={styles.NextBtn} onPress={() => save()}>
+        <Text style={styles.textBtn}>ذخیره</Text>
+      </TouchableOpacity>
+    </LinearGradient>
+  )
 }
 const EditCard = ({navigation}) => {
   let [word, setWord] = useState(
@@ -54,14 +153,16 @@ const EditCard = ({navigation}) => {
   let [meaning, setMeaning] = useState(word.meaning)
   let [example, setExample] = useState(word.example)
   let [imgUri, setImgUri] = useState(word.imgUri)
-  let [voice1Path, setVoice1Path] = useState(pathFile + '/' + word.voiceUri1)
-  let [voice2Path, setVoice2Path] = useState(pathFile + '/' + word.voiceUri2)
+  let [voice1Path, setVoice1Path] = useState(word.voiceUri1)
+  let [voice2Path, setVoice2Path] = useState(word.voiceUri2)
+  let [voice3Path, setVoice3Path] = useState(word.voiceUri3)
   let [coefTime, setCoefTime] = useState(word.coefTime)
   let [readDate, setReaDate] = useState(word.readDate)
   let [nextReviewDate, setNextReviewDate] = useState(word.nextReviewDate)
   let [position, setPosition] = useState(word.position)
 
   useEffect(() => {
+    console.log(pathFile + '/' + voice1Path)
     // console.log(navigation.state.params)
   })
   const onPars = text => {
@@ -86,6 +187,9 @@ const EditCard = ({navigation}) => {
     navigation.state.params.words[index].meaning = meaning
     navigation.state.params.words[index].example = example
     navigation.state.params.words[index].coefTime = coefTime
+    navigation.state.params.words[index].voiceUri1 = voice1Path
+    navigation.state.params.words[index].voiceUri2 = voice2Path
+    navigation.state.params.words[index].voiceUri3 = voice3Path
     navigation.state.params.words[index].readDate = readDate
     navigation.state.params.words[index].nextReviewDate = nextReviewDate
     navigation.state.params.words[index].position = position
@@ -93,8 +197,9 @@ const EditCard = ({navigation}) => {
     let path =
       navigation.state.params.categoryName +
       '/' +
+      navigation.state.params.subCategoryName +
+      '/' +
       navigation.state.params.currentFile.name
-    console.log(navigation.state.params.words[index])
     writeToFile(
       path,
       navigation.state.params.currentFile.name + '.json',
@@ -104,6 +209,7 @@ const EditCard = ({navigation}) => {
       },
     )
   }
+
   return (
     <LinearGradient
       colors={['#4c669f', '#3b5998', '#192f6a']}
@@ -112,83 +218,81 @@ const EditCard = ({navigation}) => {
       <ScrollView
         contentContainerStyle={{flexGrow: 1}}
         showsVerticalScrollIndicator={false}>
-        {word && (
-          <View
-            style={{
-              flex: 1,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
-            <TextInput
-              style={styles.InputText}
-              placeholder='واژه یا سوال  را وارد کنید'
-              multiline={true}
-              onChangeText={text => {
-                setVoice1Path(pathFile + '/' + text + '1.mp3')
-                setVoice2Path(pathFile + '/' + text + '2.mp3')
-                setEnglishWord(text)
-              }}
-              defaultValue={englishWord}
-            />
-
-            <View style={{flexDirection: 'row'}}>
-              <TextInput
-                style={styles.InputTextCoef}
-                placeholder='ضریب'
-                onChangeText={text => {
-                  setCoefTime(text)
-                }}
-                value={coefTime}
-                defaultValue={coefTime}
-              />
-              <Text style={styles.lableText}>(s)ضریب زمان پاسخگویی</Text>
-            </View>
-            {englishWord !== '' && <VoiceRecorder inputpath={voice1Path} />}
-            <TextInput
-              style={styles.InputText}
-              placeholder='معانی یا پاسخ را وارد کنید '
-              multiline={true}
-              onChangeText={text => onPars(text)}
-              value={appendText(meaning)}
-            />
-            <TextInput
-              style={styles.InputText}
-              placeholder='مثال یا توضیحات را وارد کنید'
-              multiline={true}
-              onChangeText={text => {
-                setExample(text)
-              }}
-              defaultValue={example}
-            />
-            <VoiceRecorder inputpath={voice2Path} />
-            <Image
-              source={{
-                uri: 'file://' + pathFile + '/' + imgUri,
-              }}
-              style={styles.wordImage}
-            />
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-              <TextInput
-                style={styles.BrowserPath}
-                placeholder='آدرس عکس '
-                value={pathFile + '/' + imgUri}
-              />
-              <TouchableOpacity
-                style={styles.browsBtn}
-                onPress={() => chooseFile()}>
-                <Text style={styles.textBtn}>گالری</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity style={styles.NextBtn} onPress={() => saveCard()}>
-              <Text style={styles.textBtn}>ذخیره</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        <View style={{flexDirection: 'row'}}>
+          <TextInput
+            style={styles.InputText}
+            placeholder='واژه یا سوال  را وارد کنید'
+            multiline={true}
+            onChangeText={text => {
+              setVoice1Path(text + '1.mp3')
+              setVoice2Path(text + '2.mp3')
+              setVoice3Path(text + '3.mp3')
+              setEnglishWord(text)
+            }}
+            defaultValue={englishWord}
+          />
+          <VoiceRecorder inputpath={pathFile + '/' + voice1Path} />
+        </View>
+        <View style={{flexDirection: 'row'}}>
+          <TextInput
+            style={styles.InputTextCoef}
+            placeholder='ضریب'
+            onChangeText={text => {
+              setCoefTime(text)
+            }}
+            value={coefTime}
+            defaultValue={coefTime}
+          />
+          <Text style={styles.lableText}>(s)ضریب زمان پاسخگویی</Text>
+        </View>
+        <View style={{flexDirection: 'row'}}>
+          <TextInput
+            style={styles.InputText}
+            placeholder='معانی یا پاسخ را وارد کنید '
+            multiline={true}
+            onChangeText={text => onPars(text)}
+            value={appendText(meaning)}
+          />
+          <VoiceRecorder inputpath={pathFile + '/' + voice2Path} />
+        </View>
+        <View style={{flexDirection: 'row'}}>
+          <TextInput
+            style={[styles.InputText, {height: 100, textAlignVertical: 'top'}]}
+            placeholder='مثال یا توضیحات را وارد کنید'
+            multiline={true}
+            onChangeText={text => {
+              setExample(text)
+            }}
+            defaultValue={example}
+          />
+          <VoiceRecorder inputpath={pathFile + '/' + voice3Path} />
+        </View>
+        <Image
+          source={{
+            uri: 'file://' + pathFile + '/' + imgUri,
+          }}
+          style={styles.wordImage}
+        />
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <TextInput
+            style={styles.BrowserPath}
+            placeholder='آدرس عکس '
+            value={pathFile + '/' + imgUri}
+          />
+          <TouchableOpacity
+            style={styles.browsBtn}
+            onPress={() => chooseFile()}>
+            <Text style={styles.textBtn}>گالری</Text>
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity style={styles.NextBtn} onPress={() => saveCard()}>
+          <Text style={styles.textBtn}>ذخیره</Text>
+        </TouchableOpacity>
       </ScrollView>
     </LinearGradient>
   )
@@ -286,6 +390,12 @@ const styles = StyleSheet.create({
     fontFamily: 'IRANSansMobile',
     textAlign: 'center',
   },
+  picker: {
+    height: 50,
+    width: 150,
+    margin: 10,
+    color: 'white',
+  },
 })
 
-export {EditCard}
+export {EditCard, editSubCategory}

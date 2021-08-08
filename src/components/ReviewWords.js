@@ -82,7 +82,7 @@ export default class ReviewWords extends React.Component {
       for (let index = 0; index < array.length; index++) {
         let word = array[index]
         if (JSON.stringify(word) !== 'null' && JSON.stringify(word) !== null) {
-          console.log(word.nextReviewDate,today);
+          // console.log(word.nextReviewDate,today);
           if (
             new Date(word.nextReviewDate) <= this.today &&
             word.position >= 0 &&
@@ -130,7 +130,6 @@ export default class ReviewWords extends React.Component {
     )
   }
   renderWords = ({item, index}) => {
-    // console.log(item.nextReviewDate, this.today, item.position)
     if (
       new Date(item.nextReviewDate) <= this.today &&
       item.position >= 0 &&

@@ -16,7 +16,7 @@ import {
   Alert,
 } from 'react-native'
 import LottieView from 'lottie-react-native'
-import {ASTORAGE_LANGUAGE, ASTORAGE_TIME, ASTORAGE_UNIT} from './consts'
+import {ASTORAGE_LANGUAGE, ASTORAGE_TIME, ASTORAGE_UNIT, DURATIONS} from './consts'
 
 
 export default class Profile extends React.Component {
@@ -25,7 +25,7 @@ export default class Profile extends React.Component {
     this.state = {
       show: true,
       intervalTime: '10',
-      unit: 'second',
+      unit: DURATIONS.second,
       lang: 'en-IE',
     }
   }
@@ -64,10 +64,10 @@ export default class Profile extends React.Component {
             onValueChange={(itemValue, itemIndex) =>
               this.setState({unit: itemValue})
             }>
-            <Picker.Item label='ثانیه' value='second' />
-            <Picker.Item label='دقیقه' value='minute' />
-            <Picker.Item label='ساعت' value='hour' />
-            <Picker.Item label='روز' value='day' />
+            <Picker.Item label='ثانیه' value={DURATIONS.second} />
+            <Picker.Item label='دقیقه' value={DURATIONS.minute} />
+            <Picker.Item label='ساعت' value={DURATIONS.hour} />
+            <Picker.Item label='روز' value={DURATIONS.day} />
           </Picker>
           <TextInput
             style={styles.InputText}

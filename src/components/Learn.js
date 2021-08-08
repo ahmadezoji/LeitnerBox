@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   RefreshControl,
+  
 } from 'react-native'
 import LottieView from 'lottie-react-native'
 import LinearGradient from 'react-native-linear-gradient'
@@ -137,7 +138,7 @@ const SubCategories = ({navigation}) => {
     return (
       <TouchableOpacity
         onPress={() =>
-          navigation.push('words', {
+          navigation.push('lessons', {
             currentFile: item,
             categoryName: categoryName,
           })
@@ -189,4 +190,77 @@ const SubCategories = ({navigation}) => {
   )
 }
 
-export {SubCategories}
+const Lessons = ({navigation}) => {
+  let [refreshing, setRefreshing] = useState(false)
+  let [lessons, setLessons] = useState([])
+  let categoryName = navigation.state.params.categoryName
+  let subCategoryName = navigation.state.params.currentFile.name
+
+  const _onRefresh = () => {
+    setRefreshing(false)
+    let path = '/' + categoryName + "/" + subCategoryName
+    getRootFiles(path, data => {
+      setLessons(data)
+      setRefreshing(true)
+    })
+  }
+  useEffect(() => {
+    _onRefresh()
+  })
+  const renderLesson = ({item}) => {
+    return (
+      <TouchableOpacity
+        onPress={() =>
+          navigation.push('words', {
+            currentFile: item,
+            categoryName: categoryName,
+            subCategoryName : subCategoryName,
+          })
+        }
+        style={{
+          backgroundColor: 'red',
+          justifyContent: 'center',
+          alignItems: 'center',
+          margin: 5,
+          width: Dimensions.get('window').width - 100,
+          height: 100,
+          borderRadius: 5,
+          shadowColor: '#000000',
+          shadowOffset: {width: 0, height: 2},
+          shadowOpacity: 0.5,
+          shadowRadius: 5,
+          elevation: 10,
+        }}>
+        <Text style={{color: 'blue', fontFamily: 'IRANSansMobile_Bold'}}>
+          {item.name.split('.')[0]}
+        </Text>
+      </TouchableOpacity>
+    )
+  }
+  return (
+    <LinearGradient
+      colors={['#4c669f', '#3b5998', '#192f6a']}
+      style={styles.linearGradient}>
+      <StatusBar
+        translucent
+        backgroundColor='transparent'
+        barStyle='dark-content'
+      />
+
+      <FlatList
+        style={{flex: 1}}
+        virtical
+        onRefresh={() => _onRefresh()}
+        refreshing={refreshing}
+        pagingEnabled={true}
+        data={lessons}
+        renderItem={renderLesson}
+        keyExtractor={(item, index) => {
+          return item.id
+        }}
+        ListFooterComponent={<View style={{height: 100}}/>}
+      />
+    </LinearGradient>
+  )
+}
+export {SubCategories,Lessons}

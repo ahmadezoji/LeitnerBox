@@ -2,6 +2,8 @@ import {Icon} from 'native-base'
 import React, {useState, useEffect, useRef} from 'react'
 import {StyleSheet, Text, TouchableOpacity, View, Slider} from 'react-native'
 import SoundRecorder from 'react-native-sound-recorder'
+import Toast from 'react-native-simple-toast'
+
 const formatNumber = number => `0${number}`.slice(-2)
 
 const getRemaining = time => {
@@ -20,78 +22,60 @@ const VoicePlayer = inputpath => {
   const {mins, secs} = getRemaining(remainingSecs)
   let [duration, setDuration] = useState(0)
   let [currentTime, setCurrentTime] = useState(0)
-
-  const reset = () => {
-    setRemainingSecs(0)
-    setIsActive(false)
-  }
-  useEffect(() => {
-    let interval = null
-    let whoosh = null
-    Sound.setCategory('Playback')
-    whoosh = new Sound(inputpath.inputpath, Sound.MAIN_BUNDLE, error => {
-      if (error) {
-        console.log('failed to load the sound', error)
-        return
-      }
-      if (whoosh._loaded) {
-        whoosh.setVolume(2.5)
-        // whoosh.setPan(1)
-        // whoosh.setNumberOfLoops(-1)
-      }
-      setDuration(whoosh.getDuration())
-      setPlayer(whoosh)
+  let sound = useRef(null)
+  let myInterval = null
+  const startPlaying = async () => {
+    if (sound.current == null) return
+    await setDuration(sound.current.getDuration())
+    sound.current.setCurrentTime(0)
+    sound.current.setSpeed(speed)
+    sound.current.play(success => {
+      if (success) stopPlayer()
     })
-
-    if (isActive) {
-      interval = setInterval(() => {
-        // setRemainingSecs(remainingSecs => remainingSecs + 1)
-        player.getCurrentTime(seconds => {
-          if (interval) {
-            setCurrentTime(seconds)
-          }
-        })
-        // player.pause(success => console.log(success))
-      }, 100)
-    } else if (!isActive && remainingSecs !== 0) {
-      clearInterval(interval)
-    }
-
-    return () => clearInterval(interval)
-  }, [isActive, remainingSecs])
-  const StartPlay = () => {
-    if (player !== null) {
-      reset()
-      setStartPlay(true)
-      setIsActive(true)
-      player.setSpeed(speed)
-      player.play(success => {
-        if (success) {
-          StopPlay()
-          console.log('successfully finished playing')
-        } else {
-          console.log('playback failed due to audio decoding errors')
-        }
+    sound.current.setCurrentTime(currentTime)
+    setStartPlay(true)
+    if (myInterval !== null) clearInterval(myInterval)
+    myInterval = setInterval(() => {
+      sound.current.getCurrentTime(secs => {
+        setCurrentTime(secs)
       })
-    }
+    }, 100)
+    console.warn('Now playing')
   }
-  const StopPlay = () => {
+  const stopPlayer = () => {
+    console.log('stop')
+    clearInterval(myInterval)
     setStartPlay(false)
-    setIsActive(false)
-    player.pause()
+    setCurrentTime(0)
+    if (sound.current !== null) sound.current = null
+    console.warn('Now stoped')
+  }
+  const pausePlaying = () => {
+    clearInterval(myInterval)
+    setStartPlay(false)
+    sound.current.pause()
+    sound.current.release()
+    console.warn('Now paused')
+  }
+  const _onplay = () => {
+    if (!startPlay) {
+      Sound.setCategory('Playback')
+      if (sound.current !== null) sound.current = null
+      sound.current = new Sound(inputpath.inputpath, null, startPlaying)
+    } else {
+      pausePlaying()
+    }
   }
   let iconPlay = startPlay ? 'pause' : 'play'
   return (
-    <View style={styles.container}>
+    <View style={styles.containerPlayer}>
       <View
         style={{
           flexDirection: 'row',
           justifyContent: 'center',
           alignItems: 'center',
         }}>
-        <TouchableOpacity
-          style={styles.playBtn}
-          onPress={() => (startPlay ? StopPlay() : StartPlay())}>
+        <TouchableOpacity style={styles.playBtn} onPress={() => _onplay()}>
           <Icon
             name={iconPlay}
             style={{textAlign: 'center', color: 'blue', fontSize: 30}}
@@ -101,6 +85,13 @@ const VoicePlayer = inputpath => {
           value={currentTime}
           maximumValue={duration}
           minimumValue={0}
+          onValueChange={val => {
+            console.log(val)
+            if (sound.current !== null) {
+              setCurrentTime(val)
+              sound.current.setCurrentTime(val)
+            }
+          }}
           style={styles.slider}
         />
         <TouchableOpacity
@@ -128,6 +119,7 @@ const VoiceRecorder = inputpath => {
   let iconRecord = startRecord ? 'stop' : 'record'
   let iconPlay = startPlay ? 'pause' : 'play'
   const {mins, secs} = getRemaining(remainingSecs)
+  let sound = useRef(null)
 
   const reset = () => {
     setRemainingSecs(0)
@@ -135,16 +127,17 @@ const VoiceRecorder = inputpath => {
   }
   useEffect(() => {
     let interval = null
-    let whoosh = null
-    whoosh = new Sound(inputpath.inputpath, Sound.MAIN_BUNDLE, error => {
+    Sound.setCategory('Playback')
+    sound.current = new Sound(inputpath.inputpath, Sound.MAIN_BUNDLE, error => {
       if (error) {
         console.log('failed to load the sound', error)
         return
       }
+      if (sound.current._loaded) {
+        sound.current.setVolume(2.5)
+      }
     })
-    whoosh.setVolume(2.5)
-    whoosh.setPan(1)
-    setPlayer(whoosh)
+
     if (isActive) {
       interval = setInterval(() => {
         setRemainingSecs(remainingSecs => remainingSecs + 1)
@@ -154,27 +147,32 @@ const VoiceRecorder = inputpath => {
     }
     return () => clearInterval(interval)
   }, [isActive, remainingSecs])
-  const StartPlay = () => {
-    Sound.setCategory('Playback')
+  const startPlaying = () => {
     reset()
+    if (sound.current._duration == -1) {
+      Toast.show('اشکال در پخش صدا')
+      return
+    }
+    sound.current.play(success => {
+      if (success) stopPlaying()
+    })
     setStartPlay(true)
     setIsActive(true)
-
-    player !== null &&
-      player.play(success => {
-        if (success) {
-          StopPlay()
-          console.log('successfully finished playing')
-        } else {
-          console.log('playback failed due to audio decoding errors')
-        }
-      })
+    console.warn('Now playing')
   }
-  const StopPlay = () => {
+
+  const stopPlaying = () => {
+    sound.current.pause()
     setStartPlay(false)
     setIsActive(false)
-    console.log(player)
-    player !== null && player.stop()
+    console.warn('Now paused')
+  }
+  const _onplay = () => {
+    if (!startPlay) {
+      startPlaying()
+    } else {
+      stopPlaying()
+    }
   }
   const StartRecord = () => {
     reset()
@@ -194,11 +192,9 @@ const VoiceRecorder = inputpath => {
     })
   }
   return (
-    <View style={styles.container}>
+    <View style={styles.containerRecorder}>
       <View style={{flexDirection: 'row'}}>
-        <TouchableOpacity
-          style={styles.playBtn}
-          onPress={() => (startPlay ? StopPlay() : StartPlay())}>
+        <TouchableOpacity style={styles.playBtn} onPress={() => _onplay()}>
           <Icon
             name={iconPlay}
             style={{textAlign: 'center', color: 'red', fontSize: 35}}
@@ -222,7 +218,22 @@ const VoiceRecorder = inputpath => {
 export {VoicePlayer, VoiceRecorder}
 
 const styles = StyleSheet.create({
-  container: {
+  containerRecorder: {
+    flexDirection: 'column',
+    backgroundColor: 'white',
+    margin: 5,
+    width: 100,
+    height: 60,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: 'black',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.9,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  containerPlayer: {
     flexDirection: 'column',
     backgroundColor: 'white',
     margin: 20,

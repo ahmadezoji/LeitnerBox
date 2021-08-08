@@ -122,66 +122,66 @@ function calcCountReview (item) {
   }
 }
 
-const RenderSubCategories = ({item, navigation}) => {
-  let [count, setCount] = useState('0')
-  let categoryName = navigation.state.params.categoryName
+// const RenderSubCategories = ({item, navigation}) => {
+//   let [count, setCount] = useState('0')
+//   let categoryName = navigation.state.params.categoryName
 
-  useEffect(() => {
-    let today = new Date()
-    let path = item.path
-    let name = item.name + '.json'
-    getFileContent(path, name, result => {
-      let array = JSON.parse(result)
-      let i = 0
-      for (let index = 0; index < array.length; index++) {
-        let word = array[index]
-        if (JSON.stringify(word) !== 'null' && JSON.stringify(word) !== null) {
-          if (
-            new Date(word.nextReviewDate) <= today &&
-            word.position >= 0 &&
-            word.position <= STEPS_COUNT
-          ) {
-            i = i + 1
-          }
-        }
-      }
-      setCount(`لغات قابل مرور : ${i}`)
-    })
-  })
-  return (
-    <TouchableOpacity
-      onPress={() =>
-        navigation.push('reviewwords', {
-          currentFile: item,
-          categoryName: categoryName,
-        })
-      }
-      style={{
-        backgroundColor: '#67b0e2',
-        justifyContent: 'center',
-        alignItems: 'center',
-        margin: 5,
-        width: Dimensions.get('window').width - 100,
-        height: 100,
-        borderRadius: 5,
-        shadowColor: '#000000',
-        shadowOffset: {width: 0, height: 2},
-        shadowOpacity: 0.5,
-        shadowRadius: 5,
-        elevation: 10,
-        flexDirection: 'column',
-      }}>
-      <Text style={{color: 'blue', fontFamily: 'IRANSansMobile_Bold'}}>
-        {item.name.split('.')[0]}
-      </Text>
-      {count !== null && (
-        <Text style={{color: 'black', fontFamily: 'IRANSansMobile'}}>
-          {count}
-        </Text>
-      )}
-    </TouchableOpacity>
-  )
-}
+//   useEffect(() => {
+//     let today = new Date()
+//     let path = item.path
+//     let name = item.name + '.json'
+//     getFileContent(path, name, result => {
+//       let array = JSON.parse(result)
+//       let i = 0
+//       for (let index = 0; index < array.length; index++) {
+//         let word = array[index]
+//         if (JSON.stringify(word) !== 'null' && JSON.stringify(word) !== null) {
+//           if (
+//             new Date(word.nextReviewDate) <= today &&
+//             word.position >= 0 &&
+//             word.position <= STEPS_COUNT
+//           ) {
+//             i = i + 1
+//           }
+//         }
+//       }
+//       setCount(`لغات قابل مرور : ${i}`)
+//     })
+//   })
+//   return (
+//     <TouchableOpacity
+//       onPress={() =>
+//         navigation.push('reviewwords', {
+//           currentFile: item,
+//           categoryName: categoryName,
+//         })
+//       }
+//       style={{
+//         backgroundColor: '#67b0e2',
+//         justifyContent: 'center',
+//         alignItems: 'center',
+//         margin: 5,
+//         width: Dimensions.get('window').width - 100,
+//         height: 100,
+//         borderRadius: 5,
+//         shadowColor: '#000000',
+//         shadowOffset: {width: 0, height: 2},
+//         shadowOpacity: 0.5,
+//         shadowRadius: 5,
+//         elevation: 10,
+//         flexDirection: 'column',
+//       }}>
+//       <Text style={{color: 'blue', fontFamily: 'IRANSansMobile_Bold'}}>
+//         {item.name.split('.')[0]}
+//       </Text>
+//       {count !== null && (
+//         <Text style={{color: 'black', fontFamily: 'IRANSansMobile'}}>
+//           {count}
+//         </Text>
+//       )}
+//     </TouchableOpacity>
+//   )
+// }
 const ReviewSubCategories = ({navigation}) => {
   let [refreshing, setRefreshing] = useState(false)
   let [subCategories, setSubCategories] = useState([])
@@ -214,7 +214,138 @@ const ReviewSubCategories = ({navigation}) => {
         pagingEnabled={true}
         data={subCategories}
         renderItem={({item}) => (
-          <RenderSubCategories item={item} navigation={navigation} />
+          // <RenderSubCategories item={item} navigation={navigation} />
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate('reviewLessons', {
+                currentFile: item,
+                categoryName: categoryName,
+                subCategoryName: item.name.split('.')[0],
+              })
+            }
+            style={{
+              backgroundColor: '#67b0e2',
+              justifyContent: 'center',
+              alignItems: 'center',
+              margin: 5,
+              width: Dimensions.get('window').width - 100,
+              height: 100,
+              borderRadius: 5,
+              shadowColor: '#000000',
+              shadowOffset: {width: 0, height: 2},
+              shadowOpacity: 0.5,
+              shadowRadius: 5,
+              elevation: 10,
+            }}>
+            <Text style={{color: 'blue', fontFamily: 'IRANSansMobile_Bold'}}>
+              {item.name.split('.')[0]}
+            </Text>
+          </TouchableOpacity>
+        )}
+        keyExtractor={(item, index) => {
+          return item.id
+        }}
+      />
+    </LinearGradient>
+  )
+}
+const RenderLessons = ({item, navigation}) => {
+  let [count, setCount] = useState('0')
+  let categoryName = navigation.state.params.categoryName
+  let subCategoryName = navigation.state.params.subCategoryName
+
+  useEffect(() => {
+    let today = new Date()
+    let path = item.path
+    let name = item.name + '.json'
+    getFileContent(path, name, result => {
+      let array = JSON.parse(result)
+      let i = 0
+      for (let index = 0; index < array.length; index++) {
+        let word = array[index]
+        if (JSON.stringify(word) !== 'null' && JSON.stringify(word) !== null) {
+          if (
+            new Date(word.nextReviewDate) <= today &&
+            word.position >= 0 &&
+            word.position <= STEPS_COUNT
+          ) {
+            i = i + 1
+          }
+        }
+      }
+      setCount(`لغات قابل مرور : ${i}`)
+    })
+  })
+  return (
+    <TouchableOpacity
+      onPress={() =>
+        navigation.push('reviewwords', {
+          currentFile: item,
+          categoryName: categoryName,
+          subCategoryName : subCategoryName,
+        })
+      }
+      style={{
+        backgroundColor: '#67b0e2',
+        justifyContent: 'center',
+        alignItems: 'center',
+        margin: 5,
+        width: Dimensions.get('window').width - 100,
+        height: 100,
+        borderRadius: 5,
+        shadowColor: '#000000',
+        shadowOffset: {width: 0, height: 2},
+        shadowOpacity: 0.5,
+        shadowRadius: 5,
+        elevation: 10,
+        flexDirection: 'column',
+      }}>
+      <Text style={{color: 'blue', fontFamily: 'IRANSansMobile_Bold'}}>
+        {item.name.split('.')[0]}
+      </Text>
+      {count !== null && (
+        <Text style={{color: 'black', fontFamily: 'IRANSansMobile'}}>
+          {count}
+        </Text>
+      )}
+    </TouchableOpacity>
+  )
+}
+const ReviewLessons = ({navigation}) => {
+  let [refreshing, setRefreshing] = useState(false)
+  let [lessons, setLessons] = useState([])
+  let categoryName = navigation.state.params.categoryName
+  let subCategoryName = navigation.state.params.currentFile.name
+
+  const _onRefresh = () => {
+    setRefreshing(false)
+    let path = '/' + categoryName + '/' + subCategoryName
+    getRootFiles(path, data => {
+      setLessons(data)
+      setRefreshing(true)
+    })
+  }
+  useEffect(() => {
+    _onRefresh()
+  })
+  return (
+    <LinearGradient
+      colors={['#e68d03', '#d7d0c4', '#a28450']}
+      style={styles.linearGradient}>
+      <StatusBar
+        translucent
+        backgroundColor='transparent'
+        barStyle='dark-content'
+      />
+
+      <FlatList
+        virtical
+        onRefresh={() => _onRefresh()}
+        refreshing={refreshing}
+        pagingEnabled={true}
+        data={lessons}
+        renderItem={({item}) => (
+          <RenderLessons item={item} navigation={navigation} />
         )}
         keyExtractor={(item, index) => {
           return item.id
@@ -224,4 +355,4 @@ const ReviewSubCategories = ({navigation}) => {
   )
 }
 
-export {ReviewSubCategories, RenderSubCategories}
+export {ReviewSubCategories, RenderLessons, ReviewLessons}

@@ -19,10 +19,19 @@ import Toast from 'react-native-simple-toast'
 import LottieView from 'lottie-react-native'
 import LinearGradient from 'react-native-linear-gradient'
 import {writeToFile} from './FileManger'
-import {ASTORAGE_TIME, ASTORAGE_UNIT, coef, COEFS, STEPS_COUNT} from './consts'
+import {
+  ASTORAGE_TIME,
+  ASTORAGE_UNIT,
+  coef,
+  COEFS,
+  DURATIONS,
+  QUESTION_CASE,
+  STEPS_COUNT,
+} from './consts'
 import moment from 'moment'
 import {Icon} from 'native-base'
 import {VoicePlayer} from './Voice'
+import {TTSBox} from './Card'
 let RNFS = require('react-native-fs')
 const formatNumber = number => `0${number}`.slice(-2)
 
@@ -31,7 +40,6 @@ const getRemaining = time => {
   const secs = time - mins * 60
   return {mins: formatNumber(mins), secs: formatNumber(secs)}
 }
-
 
 const MyTimer = (isStart, maxVal) => {
   let [time, setTime] = useState(0)
@@ -66,39 +74,26 @@ export default class ReviewCard extends React.Component {
     let intervalTimer = null
     this.state = {
       showOver: false,
-      word: [],
+      word: {},
       loaded: false,
       remainingSecs: 0,
       isActive: false,
       recommendBtn: null,
-      pathVoice1: '',
-      pathVoice2: '',
+      defaultQuestionCase: null,
     }
   }
   componentWillMount () {
-    this.startTimer(true)
+    // this.startTimer(true)
   }
   async componentDidMount () {
     let words = await this.props.navigation.state.params.words
     let index = await this.props.navigation.state.params.index
-    let reviewindex = await this.props.navigation.state.params.indexs
-    // console.log(reviewindex)
     await this.setState({
       word: words[index],
       loaded: true,
     })
 
-    if (this.state.word !== null) {
-      let path = this.props.navigation.state.params.currentFile.path
-      RNFS.exists(path).then(result => {
-        if (result) {
-          this.setState({
-            pathVoice1: path + '/' + this.state.word.voiceUri1,
-            pathVoice2: path + '/' + this.state.word.voiceUri2,
-          })
-        }
-      })
-    }
+    this.loadSettings()
   }
   async startTimer () {
     if (!this.state.isActive) {
@@ -108,7 +103,7 @@ export default class ReviewCard extends React.Component {
         let time = getRemaining(this.state.remainingSecs)
         // let time = moment(new Date().getTime()).format('ss:s')
         let text = time.mins + ':' + time.secs
-        this.props.navigation.setParams({timer: text })
+        this.props.navigation.setParams({timer: text})
         // console.log(moment(new Date().getTime()).format('ss:s'));
       }, 1000)
       this.setState({isActive: true})
@@ -130,64 +125,84 @@ export default class ReviewCard extends React.Component {
     let index = await this.props.navigation.state.params.index
 
     let position = this.props.navigation.state.params.words[index].position
-    // let review = this.props.navigation.state.params.words[index].nextReviewDate
     let today = new Date()
-
-    // let max = moment(review).add(Math.pow(2, STEPS_COUNT) * interval, unit)
-    // if (max < today) {
-    // this.props.navigation.state.params.words[index].position = STEPS_COUNT
-    // } else
-    if (
-      this.props.navigation.state.params.words[index].position >= 0 &&
-      this.props.navigation.state.params.words[index].position <= STEPS_COUNT
-    ) {
-      if (coef == COEFS.superEasy) {
-        this.props.navigation.state.params.words[index].position = -20 //learned this word
-      } else if (coef == COEFS.veryEasy) {
-        this.props.navigation.state.params.words[index].position =
-          this.props.navigation.state.params.words[index].position + 2
-        let newPosition = this.props.navigation.state.params.words[index]
-          .position
-        this.props.navigation.state.params.words[index].nextReviewDate = moment(
-          new Date(),
-        ).add(Math.pow(2, newPosition) * interval, unit)
-      } else if (coef == COEFS.easy) {
-        this.props.navigation.state.params.words[index].position =
-          this.props.navigation.state.params.words[index].position + 1
-        let newPosition = this.props.navigation.state.params.words[index]
-          .position
-        this.props.navigation.state.params.words[index].nextReviewDate = moment(
-          new Date(),
-        ).add(Math.pow(2, newPosition) * interval, unit)
-      } else if (coef == COEFS.medium) {
-        // this.props.navigation.state.params.words[index].nextReviewDate = moment(new Date()).add(coef * interval, unit)
-      } else if (coef == COEFS.hard) {
-        this.props.navigation.state.params.words[index].position =
-          this.props.navigation.state.params.words[index].position - 1
-        let newPosition = this.props.navigation.state.params.words[index]
-          .position
-        this.props.navigation.state.params.words[index].nextReviewDate = moment(
-          new Date(),
-        ).add(Math.pow(2, newPosition) * interval, unit)
-      } else if (coef == COEFS.superHard) {
-        this.props.navigation.state.params.words[index].position = 0
-        this.props.navigation.state.params.words[index].readDate = today
-        this.props.navigation.state.params.words[index].nextReviewDate = today
-      }
-    } else {
-      return
+    // if (
+    //   this.props.navigation.state.params.words[index].position >= 0 &&
+    //   this.props.navigation.state.params.words[index].position <= STEPS_COUNT
+    // ) {
+    if (coef == COEFS.superEasy) {
+      this.props.navigation.state.params.words[index].position = -20 //learned this word
+    } else if (coef == COEFS.veryEasy && position + 2 <= STEPS_COUNT) {
+      this.props.navigation.state.params.words[index].position =
+        this.props.navigation.state.params.words[index].position + 2
+      let newPosition = this.props.navigation.state.params.words[index].position
+      this.props.navigation.state.params.words[index].nextReviewDate = moment(
+        new Date(),
+      ).add(Math.pow(2, newPosition) * interval, unit)
+    } else if (coef == COEFS.easy && position + 1 <= STEPS_COUNT) {
+      this.props.navigation.state.params.words[index].position =
+        this.props.navigation.state.params.words[index].position + 1
+      let newPosition = this.props.navigation.state.params.words[index].position
+      this.props.navigation.state.params.words[index].nextReviewDate = moment(
+        new Date(),
+      ).add(Math.pow(2, newPosition) * interval, unit)
+    } else if (coef == COEFS.medium) {
+      // this.props.navigation.state.params.words[index].nextReviewDate = moment(new Date()).add(coef * interval, unit)
+    } else if (coef == COEFS.hard && position - 1 >= 0) {
+      this.props.navigation.state.params.words[index].position =
+        this.props.navigation.state.params.words[index].position - 1
+      let newPosition = this.props.navigation.state.params.words[index].position
+      this.props.navigation.state.params.words[index].nextReviewDate = moment(
+        new Date(),
+      ).add(Math.pow(2, newPosition) * interval, unit)
+    } else if (coef == COEFS.superHard) {
+      this.props.navigation.state.params.words[index].position = 0
+      this.props.navigation.state.params.words[index].readDate = today
+      this.props.navigation.state.params.words[index].nextReviewDate = today
     }
+    // }
+    // else {
+    // return
+    // }
 
     let path =
       this.props.navigation.state.params.categoryName +
       '/' +
+      this.props.navigation.state.params.subCategoryName +
+      '/' +
       this.props.navigation.state.params.currentFile.name
+
+    // let nextReview = this.props.navigation.state.params.words[index]
+    // .nextReviewDate
+    // let val = null
+    // let diff = null
+    // if (unit == DURATIONS.day) val = 'dd'
+    // else if (unit == DURATIONS.hour) val = 'hh'
+    // else if (unit == DURATIONS.minute) val = 'mm'
+    // else if (unit == DURATIONS.second) val = 'ss'
+    // if (val !== null)
+    // diff = moment(moment(new Date(nextReview)).diff(today)).format(val)
+
+    // var date = moment(moment(new Date(nextReview)).diff(today))
+    // .format('YYYY-MM-DD hh:mm:ss a');
+    // console.log(date);
+    // console.log(new Date(nextReview - today));
+    // console.log(pos)
+    // let msg = ' '+new Date(nextReview - today);
+    // Toast.show(msg)
+
+    // Toast.show(new Date(nextReview - today))
+    // Toast.show(posi , msg)
 
     writeToFile(
       path,
       this.props.navigation.state.params.currentFile.name + '.json',
       this.props.navigation.state.params.words,
       result => {
+        let pos = this.props.navigation.state.params.words[index].position
+        let posi = ' جایگاه جدید : ' + pos
+        alert(posi)
+
         this.props.navigation.goBack()
       },
     )
@@ -213,33 +228,84 @@ export default class ReviewCard extends React.Component {
       } else if (duration > 2 * (validTime / 3) && duration <= validTime) {
         this.setState({recommendBtn: COEFS.hard})
         Toast.show('بنظرم پاسخ سختی بود')
+      } else if (duration > validTime) {
+        this.setState({recommendBtn: COEFS.superHard})
+        Toast.show('دیگه خیلی کشش دادی')
       }
     }
   }
-  // componentDidUpdate(){
-  //   console.log(moment(new Date().getTime()).format('ss:s'));
-  //   let time =moment(new Date().getTime()).format('ss:s');
-  //   this.props.navigation.setParams({timer: time})
-  // }
-  render () {
-    let size = Object.keys(this.props.navigation.state.params.indexs).length
-    let index = this.props.navigation.state.params.index + 1
-    // let pathVoice1 =
-    //   this.props.navigation.state.params.currentFile.path +
-    //   '/' +
-    //   this.state.word.voiceUri1
-    // let pathVoice2 =
-    //   this.props.navigation.state.params.currentFile.path +
-    //   '/' +
-    //   this.state.word.voiceUri2
+  async loadSettings () {
+    let key =
+      this.props.navigation.state.params.categoryName +
+      '/' +
+      this.props.navigation.state.params.subCategoryName
 
-    // console.log(this.state.recommendBtn);
-    // if(this.state.isActive)
-    // {
-    //   let time = moment(new Date().getTime()).format('ss:s')
-    //   // let text = time.mins + ':' + time.secs
-    //   this.props.navigation.setParams({timer: time})
-    // }
+    let array = await AsyncStorage.getItem(key)
+    console.log(defaul_QC);
+    let defaul_QC = JSON.parse(array)[1]
+    if (defaul_QC !== null || defaul_QC !== undefined) {
+      this.setState({defaultQuestionCase: defaul_QC})
+    }
+  }
+  renderQuestion = path => {
+    return (
+      <View style={{justifyContent: 'center', alignItems: 'center'}}>
+        <Text style={styles.TitleText}>{this.state.word.englishWord}</Text>
+        <TTSBox inputText={this.state.word.englishWord} />
+        <VoicePlayer inputpath={path.path + '/' + this.state.word.voiceUri1} />
+      </View>
+    )
+  }
+  renderImage = path => {
+    return (
+      <View style={{justifyContent: 'center', alignItems: 'center'}}>
+        <Image
+          source={{
+            uri:
+              'file://' +
+              this.props.navigation.state.params.currentFile.path +
+              '/' +
+              this.state.word.imgUri,
+          }}
+          style={styles.wordImage}
+        />
+      </View>
+    )
+  }
+  renderAnswer = path => {
+    return (
+      <View style={{justifyContent: 'center', alignItems: 'center'}}>
+        <Text style={styles.meaningText}>{this.state.word.meaning}</Text>
+        <TTSBox inputText={this.state.word.meaning} />
+        <VoicePlayer inputpath={path.path + '/' + this.state.word.voiceUri2} />
+      </View>
+    )
+  }
+  renderExample = path => {
+    return (
+      <View style={{justifyContent: 'center', alignItems: 'center'}}>
+        <Text style={styles.exampleText}>{this.state.word.example}</Text>
+        <TTSBox inputText={this.state.word.example} />
+        <VoicePlayer inputpath={path.path + '/' + this.state.word.voiceUri3} />
+      </View>
+    )
+  }
+  render () {
+    let path = this.props.navigation.state.params.currentFile.path
+    let defaultCaseView = null
+    if (this.state.defaultQuestionCase !== null) {
+      if (this.state.defaultQuestionCase == QUESTION_CASE.englishWord) {
+        defaultCaseView = <this.renderQuestion path={path} />
+      } else if (this.state.defaultQuestionCase == QUESTION_CASE.meaning) {
+        defaultCaseView = <this.renderAnswer path={path} />
+      } else if (this.state.defaultQuestionCase == QUESTION_CASE.example) {
+        defaultCaseView = <this.renderExample path={path} />
+      } else if (this.state.defaultQuestionCase == QUESTION_CASE.image) {
+        defaultCaseView = <this.renderImage path={path} />
+      } else {
+        defaultCaseView = <this.renderQuestion path={path} />
+      }
+    }
 
     return (
       <LinearGradient
@@ -247,8 +313,8 @@ export default class ReviewCard extends React.Component {
         style={styles.linearGradient}>
         <StatusBar translucent backgroundColor='transparent' />
         <ScrollView contentContainerStyle={{flexGrow: 1}}>
-          <View style={{justifyContent: 'center', alignItems: 'center'}}>
-            <Text style={styles.TitleText}>{this.state.word.englishWord}</Text>
+          <View style={styles.container}>
+            {!this.state.showOver && defaultCaseView}
             <TouchableOpacity
               style={styles.BtnShowOver}
               onPress={() => this._showOver()}>
@@ -257,56 +323,20 @@ export default class ReviewCard extends React.Component {
               </Text>
             </TouchableOpacity>
             {this.state.showOver && (
-              <View
-                style={{
-                  flex: 1,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}>
-                {(this.state.pathVoice1 !== '' ||
-                  this.state.pathVoice2 !== null) && (
-                  <VoicePlayer inputpath={this.state.pathVoice1} />
+              <View style={styles.container}>
+                {this.state.defaultQuestionCase !==
+                  QUESTION_CASE.englishWord && (
+                  <this.renderQuestion path={path} />
                 )}
-                <Image
-                  // source={{uri: 'file:////storage/emulated/0/Pictures/Img.jpg'}}
-                  source={{
-                    uri:
-                      'file://' +
-                      this.props.navigation.state.params.currentFile.path +
-                      '/' +
-                      this.state.word.imgUri,
-                  }}
-                  style={{width: 200, height: 100}}
-                />
-                <Text style={styles.meaningText}>
-                  {this.state.word.meaning}
-                </Text>
-
-                <Text style={styles.meaningText}>
-                  {this.state.word.example}
-                </Text>
-                {(this.state.pathVoice2 !== '' ||
-                  this.state.pathVoice2 !== null) && (
-                  <VoicePlayer inputpath={this.state.pathVoice2} />
+                {this.state.defaultQuestionCase !== QUESTION_CASE.meaning && (
+                  <this.renderAnswer path={path} />
                 )}
-                {index < size && (
-                  <TouchableOpacity
-                    style={styles.NextBtn}
-                    onPress={() => {
-                      if (index < size) {
-                        this.props.navigation.state.params.index = this.props.navigation.state.params.indexs[
-                          index
-                        ]
-                        this.props.navigation.replace(
-                          'reviewcard',
-                          this.props.navigation.state.params,
-                        )
-                      }
-                    }}>
-                    <Text style={styles.textBtn}>بعدی</Text>
-                  </TouchableOpacity>
+                {this.state.defaultQuestionCase !== QUESTION_CASE.example && (
+                  <this.renderExample path={path} />
                 )}
-
+                {this.state.defaultQuestionCase !== QUESTION_CASE.image && (
+                  <this.renderImage path={path} />
+                )}
                 <View
                   style={{
                     flexDirection: 'column',
@@ -430,21 +460,27 @@ let styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 50,
+  },
   TitleText: {
     color: 'black',
-    fontSize: 20,
+    fontSize: 16,
     textAlign: 'center',
     fontFamily: 'IRANSansMobile_Bold',
   },
   meaningText: {
     color: 'red',
-    fontSize: 15,
+    fontSize: 16,
     textAlign: 'center',
     fontFamily: 'IRANSansMobile',
   },
   exampleText: {
     color: 'yellow',
-    fontSize: 12,
+    fontSize: 16,
     textAlign: 'center',
     fontFamily: 'IRANSansMobile',
   },
