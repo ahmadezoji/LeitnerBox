@@ -80,7 +80,7 @@ export default class Learn extends React.Component {
   }
   renderCategories = ({item}) => {
     return (
-      <TouchableOpacity
+      <TouchableOpacity 
         onPress={() =>
           this.props.navigation.navigate('subCategories', {
             currentFile: item,

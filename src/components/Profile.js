@@ -26,7 +26,7 @@ export default class Profile extends React.Component {
       show: true,
       intervalTime: '10',
       unit: DURATIONS.second,
-      lang: 'en-IE',
+      
     }
   }
   async componentDidMount () {
@@ -39,8 +39,6 @@ export default class Profile extends React.Component {
   async save () {
     await AsyncStorage.setItem(ASTORAGE_TIME, this.state.intervalTime)
     await AsyncStorage.setItem(ASTORAGE_UNIT, this.state.unit)
-
-    await AsyncStorage.setItem(ASTORAGE_LANGUAGE, this.state.lang)
 
     alert('save settings')
   }
@@ -77,26 +75,7 @@ export default class Profile extends React.Component {
             defaultValue={this.state.intervalTime}
           />
         </View>
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-          <Picker
-            ref={val => (this.pickerlang = val)}
-            selectedValue={this.state.lang}
-            style={{height: 50, width: 150, margin: 10}}
-            onValueChange={(itemValue, itemIndex) =>
-              this.setState({lang: itemValue})
-            }>
-            <Picker.Item label='فارسی' value='fa' />
-            <Picker.Item label='انگلیسی' value='en-IE' />
-            <Picker.Item label='عربی' value='ar-sa' />
-            <Picker.Item label='اسپانیا' value='es' />
-          </Picker>
-          <Text style={styles.textSettingLang}>زبان text to speech</Text>
-        </View>
+       
         <TouchableOpacity style={styles.NextBtn} onPress={() => this.save()}>
           <Text style={styles.textBtn}>ذخیره</Text>
         </TouchableOpacity>
@@ -122,10 +101,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  textSettingLang: {
-    color: 'black',
-    fontSize: 15,
-    textAlign: 'center',
-    color: 'red',
-  },
+ 
 })

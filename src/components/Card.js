@@ -32,10 +32,10 @@ const appendText = array => {
   }
   return text
 }
-const TTSBox = inputText => {
+const TTSBox = params => {
   let [speed, setSpeed] = useState(6)
-  let [text, setText] = useState(inputText.inputText)
-  let [lang, setLang] = useState('')
+  let [text, setText] = useState(params.inputText)
+  let [lang, setLang] = useState(params.lang)
 
   const styles = StyleSheet.create({
     container: {
@@ -66,9 +66,9 @@ const TTSBox = inputText => {
   })
 
   useEffect(() => {
-    setText(inputText.inputText)
+    setText(params.inputText)
     Tts.setDefaultRate(speed / 10)
-    Tts.setDefaultLanguage('fr');
+    Tts.setDefaultLanguage(lang)
   })
   const play = () => {
     try {
@@ -104,6 +104,7 @@ export default class Card extends React.Component {
         duration: 0,
         playerSpeed: 1.0,
         loaded: false,
+        lang: 'en-IE',
       })
   }
   async componentDidMount () {
@@ -112,7 +113,7 @@ export default class Card extends React.Component {
 
     await this.setState({word: words[index], loaded: true})
 
-    console.log(this.state.word);
+    this.loadSettings()
 
     if (this.props.navigation.state.params.words[index].readDate == 'null') {
       console.log('start card')
@@ -122,6 +123,17 @@ export default class Card extends React.Component {
       this.props.navigation.state.params.words[index].nextReviewDate = today
       this.save()
     }
+  }
+  async loadSettings () {
+    let key =
+      this.props.navigation.state.params.categoryName +
+      '/' +
+      this.props.navigation.state.params.subCategoryName
+
+    let array = await AsyncStorage.getItem(key)
+    let json = JSON.parse(array)
+
+    this.setState({lang: json[2]})
   }
   async save () {
     let path =
@@ -156,15 +168,24 @@ export default class Card extends React.Component {
               <Text style={styles.TitleText}>
                 {this.state.word.englishWord}
               </Text>
-              <TTSBox inputText={this.state.word.englishWord} />
+              <TTSBox
+                inputText={this.state.word.englishWord}
+                lang={this.state.lang}
+              />
               <VoicePlayer inputpath={path + '/' + this.state.word.voiceUri1} />
 
               <Text style={styles.meaningText}>{this.state.word.meaning}</Text>
-              <TTSBox inputText={this.state.word.meaning} />
+              <TTSBox
+                inputText={this.state.word.meaning}
+                lang={this.state.lang}
+              />
               <VoicePlayer inputpath={path + '/' + this.state.word.voiceUri2} />
 
               <Text style={styles.exampleText}>{this.state.word.example}</Text>
-              <TTSBox inputText={this.state.word.example} />
+              <TTSBox
+                inputText={this.state.word.example}
+                lang={this.state.lang}
+              />
               <VoicePlayer inputpath={path + '/' + this.state.word.voiceUri3} />
 
               <Image

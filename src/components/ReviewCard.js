@@ -79,7 +79,8 @@ export default class ReviewCard extends React.Component {
       remainingSecs: 0,
       isActive: false,
       recommendBtn: null,
-      defaultQuestionCase: null,
+      viewArrays: [],
+      lang: 'en-IE',
     }
   }
   componentWillMount () {
@@ -160,10 +161,6 @@ export default class ReviewCard extends React.Component {
       this.props.navigation.state.params.words[index].readDate = today
       this.props.navigation.state.params.words[index].nextReviewDate = today
     }
-    // }
-    // else {
-    // return
-    // }
 
     let path =
       this.props.navigation.state.params.categoryName +
@@ -172,37 +169,22 @@ export default class ReviewCard extends React.Component {
       '/' +
       this.props.navigation.state.params.currentFile.name
 
-    // let nextReview = this.props.navigation.state.params.words[index]
-    // .nextReviewDate
-    // let val = null
-    // let diff = null
-    // if (unit == DURATIONS.day) val = 'dd'
-    // else if (unit == DURATIONS.hour) val = 'hh'
-    // else if (unit == DURATIONS.minute) val = 'mm'
-    // else if (unit == DURATIONS.second) val = 'ss'
-    // if (val !== null)
-    // diff = moment(moment(new Date(nextReview)).diff(today)).format(val)
-
-    // var date = moment(moment(new Date(nextReview)).diff(today))
-    // .format('YYYY-MM-DD hh:mm:ss a');
-    // console.log(date);
-    // console.log(new Date(nextReview - today));
-    // console.log(pos)
-    // let msg = ' '+new Date(nextReview - today);
-    // Toast.show(msg)
-
-    // Toast.show(new Date(nextReview - today))
-    // Toast.show(posi , msg)
-
     writeToFile(
       path,
       this.props.navigation.state.params.currentFile.name + '.json',
       this.props.navigation.state.params.words,
       result => {
         let pos = this.props.navigation.state.params.words[index].position
-        let posi = ' جایگاه جدید : ' + pos
-        alert(posi)
+        let next = this.props.navigation.state.params.words[index]
+          .nextReviewDate
+        if (pos !== null && next !== null && unit !== null) {
+          let time_en = moment.unix(next)
+          let time_st = moment.unix(today)
+          let diff = time_en.diff(time_st, unit)
 
+          Toast.show('جایگاه جدید :  ' + pos)
+          Toast.show('مرور بعدی :  ' + parseInt(diff)/1000 + ' ' + unit)
+        }
         this.props.navigation.goBack()
       },
     )
@@ -241,17 +223,20 @@ export default class ReviewCard extends React.Component {
       this.props.navigation.state.params.subCategoryName
 
     let array = await AsyncStorage.getItem(key)
-    console.log(defaul_QC);
-    let defaul_QC = JSON.parse(array)[1]
-    if (defaul_QC !== null || defaul_QC !== undefined) {
-      this.setState({defaultQuestionCase: defaul_QC})
+    let json = JSON.parse(array)
+
+    if (array !== null) {
+      await this.setState({viewArrays: json[1], lang: json[2]})
     }
   }
   renderQuestion = path => {
     return (
       <View style={{justifyContent: 'center', alignItems: 'center'}}>
         <Text style={styles.TitleText}>{this.state.word.englishWord}</Text>
-        <TTSBox inputText={this.state.word.englishWord} />
+        <TTSBox
+          inputText={this.state.word.englishWord}
+          lang={this.state.lang}
+        />
         <VoicePlayer inputpath={path.path + '/' + this.state.word.voiceUri1} />
       </View>
     )
@@ -276,7 +261,7 @@ export default class ReviewCard extends React.Component {
     return (
       <View style={{justifyContent: 'center', alignItems: 'center'}}>
         <Text style={styles.meaningText}>{this.state.word.meaning}</Text>
-        <TTSBox inputText={this.state.word.meaning} />
+        <TTSBox inputText={this.state.word.meaning} lang={this.state.lang} />
         <VoicePlayer inputpath={path.path + '/' + this.state.word.voiceUri2} />
       </View>
     )
@@ -285,27 +270,21 @@ export default class ReviewCard extends React.Component {
     return (
       <View style={{justifyContent: 'center', alignItems: 'center'}}>
         <Text style={styles.exampleText}>{this.state.word.example}</Text>
-        <TTSBox inputText={this.state.word.example} />
+        <TTSBox inputText={this.state.word.example} lang={this.state.lang} />
         <VoicePlayer inputpath={path.path + '/' + this.state.word.voiceUri3} />
       </View>
     )
   }
   render () {
     let path = this.props.navigation.state.params.currentFile.path
-    let defaultCaseView = null
-    if (this.state.defaultQuestionCase !== null) {
-      if (this.state.defaultQuestionCase == QUESTION_CASE.englishWord) {
-        defaultCaseView = <this.renderQuestion path={path} />
-      } else if (this.state.defaultQuestionCase == QUESTION_CASE.meaning) {
-        defaultCaseView = <this.renderAnswer path={path} />
-      } else if (this.state.defaultQuestionCase == QUESTION_CASE.example) {
-        defaultCaseView = <this.renderExample path={path} />
-      } else if (this.state.defaultQuestionCase == QUESTION_CASE.image) {
-        defaultCaseView = <this.renderImage path={path} />
-      } else {
-        defaultCaseView = <this.renderQuestion path={path} />
-      }
-    }
+    let defaultCaseView = (
+      <View>
+        {this.state.viewArrays[0] && <this.renderQuestion path={path} />}
+        {this.state.viewArrays[1] && <this.renderAnswer path={path} />}
+        {this.state.viewArrays[2] && <this.renderExample path={path} />}
+        {this.state.viewArrays[3] && <this.renderImage path={path} />}
+      </View>
+    )
 
     return (
       <LinearGradient
@@ -324,19 +303,10 @@ export default class ReviewCard extends React.Component {
             </TouchableOpacity>
             {this.state.showOver && (
               <View style={styles.container}>
-                {this.state.defaultQuestionCase !==
-                  QUESTION_CASE.englishWord && (
-                  <this.renderQuestion path={path} />
-                )}
-                {this.state.defaultQuestionCase !== QUESTION_CASE.meaning && (
-                  <this.renderAnswer path={path} />
-                )}
-                {this.state.defaultQuestionCase !== QUESTION_CASE.example && (
-                  <this.renderExample path={path} />
-                )}
-                {this.state.defaultQuestionCase !== QUESTION_CASE.image && (
-                  <this.renderImage path={path} />
-                )}
+                <this.renderQuestion path={path} />
+                <this.renderAnswer path={path} />
+                <this.renderExample path={path} />
+                <this.renderImage path={path} />
                 <View
                   style={{
                     flexDirection: 'column',

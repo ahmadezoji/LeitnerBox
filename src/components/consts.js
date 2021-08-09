@@ -14,12 +14,27 @@ export const QUESTION_CASE = {
   image : 3,
 }
 export const DURATIONS = {
-  second : 'second',
-  minute : 'minute',
-  hour : 'hour',
-  day: 'day',
+  second : 'seconds',
+  minute : 'minutes',
+  hour : 'hours',
+  day: 'days',
 }
-
+export const LANGUAGES = {
+  english:'en-IE',
+  english_british : 'en-GB',
+  english_american : 'en-US',
+  french : 'fr',
+  deutsch_germany : 'de-DE',
+  russian : 'ru',
+  spanish : 'es',
+  turkish : 'tr',
+  chinese : 'zh-CN',
+  india : 'hi-IN',
+  italian : 'it',
+  portuguese:'pt-PT',
+  japanese : 'ja-JP',
+  arabic : 'ar-SA'
+}
 export const STEPS_COUNT = 5;
 export const ASTORAGE_QC = 'questionCase';//questionCase
 export const ASTORAGE_LANGUAGE = 'txtToSpeexhLang';
