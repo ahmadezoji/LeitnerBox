@@ -14,14 +14,18 @@ import {
   TouchableOpacity,
   StyleSheet,
   RefreshControl,
-  
 } from 'react-native'
 import LottieView from 'lottie-react-native'
 import LinearGradient from 'react-native-linear-gradient'
-import {getRootFiles} from './FileManger'
+import {
+  getFileContent,
+  getRootFiles,
+  getRootFolders,
+  readSettingJson,
+} from './FileManger'
 import moment from 'moment'
 import Profile from './Profile'
-import { ASTORAGE_TIME, ASTORAGE_UNIT } from './consts'
+import {ASTORAGE_TIME, ASTORAGE_UNIT} from './consts'
 // const words = require('../assets/words.json')
 export default class Learn extends React.Component {
   constructor (props) {
@@ -34,15 +38,7 @@ export default class Learn extends React.Component {
   onFocusFunction = () => {
     this._onRefresh()
   }
-  async setDefault(){
-    let interval = await AsyncStorage.getItem(ASTORAGE_TIME)
-    let unit = await AsyncStorage.getItem(ASTORAGE_UNIT)
-
-    if (interval == null) await AsyncStorage.setItem(ASTORAGE_TIME, '10')
-    if (unit == null) await AsyncStorage.setItem(ASTORAGE_UNIT, 'second')
-  }
   async componentDidMount () {
-    this.setDefault();
     this.focusListener = this.props.navigation.addListener('didFocus', () => {
       this.onFocusFunction()
     })
@@ -50,7 +46,7 @@ export default class Learn extends React.Component {
   }
   _onRefresh = () => {
     this.setState({refreshing: true})
-    getRootFiles('/', data => {
+    getRootFolders('/', data => {
       this.setState({categories: data, refreshing: false})
     })
   }
@@ -80,7 +76,7 @@ export default class Learn extends React.Component {
   }
   renderCategories = ({item}) => {
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         onPress={() =>
           this.props.navigation.navigate('subCategories', {
             currentFile: item,
@@ -126,7 +122,7 @@ const SubCategories = ({navigation}) => {
   const _onRefresh = () => {
     setRefreshing(false)
     let path = '/' + categoryName
-    getRootFiles(path, data => {
+    getRootFolders(path, data => {
       setSubCategories(data)
       setRefreshing(true)
     })
@@ -184,7 +180,7 @@ const SubCategories = ({navigation}) => {
         keyExtractor={(item, index) => {
           return item.id
         }}
-        ListFooterComponent={<View style={{height: 100}}/>}
+        ListFooterComponent={<View style={{height: 100}} />}
       />
     </LinearGradient>
   )
@@ -193,30 +189,44 @@ const SubCategories = ({navigation}) => {
 const Lessons = ({navigation}) => {
   let [refreshing, setRefreshing] = useState(false)
   let [lessons, setLessons] = useState([])
+  let [settings, setSettings] = useState(null)
   let categoryName = navigation.state.params.categoryName
   let subCategoryName = navigation.state.params.currentFile.name
 
   const _onRefresh = () => {
     setRefreshing(false)
-    let path = '/' + categoryName + "/" + subCategoryName
-    getRootFiles(path, data => {
+    let path = '/' + categoryName + '/' + subCategoryName
+    getRootFolders(path, data => {
       setLessons(data)
+      getRootFiles(path, data => {
+        let array = data.filter(item =>
+          item.name.includes(subCategoryName + '.json'),
+        )
+        let path = array[0].path
+        readSettingJson(path, data => {
+          setSettings(data)
+          navigation.state.params.settings = data
+        })
+      })
       setRefreshing(true)
     })
   }
   useEffect(() => {
     _onRefresh()
+    // console.log(navigation.state.params)
   })
+
   const renderLesson = ({item}) => {
     return (
       <TouchableOpacity
-        onPress={() =>
+        onPress={() => {
           navigation.push('words', {
             currentFile: item,
             categoryName: categoryName,
-            subCategoryName : subCategoryName,
+            subCategoryName: subCategoryName,
+            settings: settings,
           })
-        }
+        }}
         style={{
           backgroundColor: 'red',
           justifyContent: 'center',
@@ -258,9 +268,9 @@ const Lessons = ({navigation}) => {
         keyExtractor={(item, index) => {
           return item.id
         }}
-        ListFooterComponent={<View style={{height: 100}}/>}
+        ListFooterComponent={<View style={{height: 100}} />}
       />
     </LinearGradient>
   )
 }
-export {SubCategories,Lessons}
+export {SubCategories, Lessons}

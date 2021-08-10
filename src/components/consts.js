@@ -35,7 +35,6 @@ export const LANGUAGES = {
   japanese : 'ja-JP',
   arabic : 'ar-SA'
 }
-export const STEPS_COUNT = 5;
 export const ASTORAGE_QC = 'questionCase';//questionCase
 export const ASTORAGE_LANGUAGE = 'txtToSpeexhLang';
 export const ASTORAGE_TIME = 'intervalTime';

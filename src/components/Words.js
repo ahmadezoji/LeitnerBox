@@ -18,8 +18,6 @@ import {
 import LottieView from 'lottie-react-native'
 import LinearGradient from 'react-native-linear-gradient'
 import {getFileContent} from './FileManger'
-import {zip, unzip, unzipAssets, subscribe} from 'react-native-zip-archive'
-import Share from 'react-native-share'
 
 export default class Words extends React.Component {
   constructor (props) {
@@ -39,6 +37,7 @@ export default class Words extends React.Component {
       this.onFocusFunction()
     })
     // this._onRefresh()
+    console.log(this.props.navigation.state.params);
   }
   async _onRefresh () {
     let path = await this.props.navigation.state.params.currentFile.path
@@ -132,43 +131,3 @@ let styles = StyleSheet.create({
     alignItems: 'center',
   },
 })
-
-const shareToFiles = async navigation => {
-  const granted = await PermissionsAndroid.check(
-    'android.permission.READ_EXTERNAL_STORAGE',
-  )
-  if (!granted) {
-    console.log('Permission not granted')
-    const response = await PermissionsAndroid.request(
-      'android.permission.READ_EXTERNAL_STORAGE',
-    )
-    if (!response) {
-      console.log('Permission not granted & non respinse')
-      return
-    }
-  } else {
-    console.log('Permission granted')
-    zip(
-      navigation.currentFile.path,
-      navigation.currentFile.path + '/' + navigation.currentFile.name + '.zip',
-    )
-      .then(path => {
-        const shareOptions = {
-          title: 'Share file',
-          failOnCancel: false,
-          urls: ['file://' + path],
-        }
-        console.log(shareOptions.urls)
-        try {
-          const ShareResponse = Share.open(shareOptions)
-        } catch (error) {
-          console.log('Error =>', error)
-        }
-      })
-      .catch(error => {
-        console.log('error' + error)
-      })
-  }
-}
-
-export {shareToFiles}

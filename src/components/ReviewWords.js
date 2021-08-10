@@ -17,16 +17,16 @@ import {
 } from 'react-native'
 import LottieView from 'lottie-react-native'
 import LinearGradient from 'react-native-linear-gradient'
-import {getFileContent, getRootFiles} from './FileManger'
+import {getFileContent, getRootFiles, getRootFolders} from './FileManger'
 import moment from 'moment'
-import {STEPS_COUNT} from './consts'
 const getReviewWords = async callback => {
   let pathCategory = ''
   let reviewCnt = 0
-  getRootFiles('/', category => {
+  getRootFolders('/', category => {
+    console.log('for badge');
     for (let i = 0; i < category.length; i++) {
       pathCategory = '/' + category[i].name
-      getRootFiles(pathCategory, subCategories => {
+      getRootFolders(pathCategory, subCategories => {
         for (let j = 0; j < subCategories.length; j++) {
           let pathFile = subCategories[j].path
           let FileName = subCategories[j].name + '.json'
@@ -34,6 +34,7 @@ const getReviewWords = async callback => {
           getFileContent(pathFile, FileName, result => {
             let today = new Date()
             let j = 0
+            // console.log(JSON.parse(result));
             for (let index = 0; index < JSON.parse(result).length; index++) {
               let review = new Date(JSON.parse(result)[index].nextReviewDate)
               if (review <= today && JSON.parse(result)[index].position > -1) {
@@ -55,6 +56,7 @@ export default class ReviewWords extends React.Component {
     this.state = {
       words: [],
       refreshing: false,
+      stages : null
     }
   }
   onFocusFunction = () => {
@@ -65,6 +67,10 @@ export default class ReviewWords extends React.Component {
       this.onFocusFunction()
     })
     // this._onRefresh()
+    let jsonSetting = JSON.parse(this.props.navigation.state.params.settings)
+    await this.setState({stages:jsonSetting.stages})
+
+    console.log('stage : ',this.state.stages);
   }
   async _onRefresh () {
     this.today = new Date()
@@ -86,7 +92,7 @@ export default class ReviewWords extends React.Component {
           if (
             new Date(word.nextReviewDate) <= this.today &&
             word.position >= 0 &&
-            word.position <= STEPS_COUNT
+            word.position <= this.state.stages
           ) {
             indexs[i] = index
             i = i + 1
@@ -133,7 +139,7 @@ export default class ReviewWords extends React.Component {
     if (
       new Date(item.nextReviewDate) <= this.today &&
       item.position >= 0 &&
-      item.position <= STEPS_COUNT
+      item.position <= this.state.stages
     ) {
       return (
         <TouchableOpacity

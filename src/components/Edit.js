@@ -19,8 +19,8 @@ import {
   Alert,
   Picker,
 } from 'react-native'
+import CheckBox from '@react-native-community/checkbox'
 import Toast from 'react-native-simple-toast'
-
 import LottieView from 'lottie-react-native'
 import LinearGradient from 'react-native-linear-gradient'
 import {Icon} from 'native-base'
@@ -37,7 +37,7 @@ import {
 } from './FileManger'
 import moment from 'moment'
 import {VoiceRecorder} from './Voice'
-import {QUESTION_CASE} from './consts'
+import {ASTORAGE_QC, DURATIONS, LANGUAGES, QUESTION_CASE} from './consts'
 
 const appendText = array => {
   let text = ''
@@ -49,97 +49,221 @@ const appendText = array => {
 }
 
 const editSubCategory = ({navigation}) => {
-  let [subCategoryName, setSubCategoryName] = useState(
-    navigation.state.params.currentFile.name,
-  )
+  let [subCategoryName, setSubCategoryName] = useState('')
   let [coefTime, setCoefTime] = useState('1.2')
-  let [questionCase, setQuestionCase] = useState(0)
+  let [toggleCheckBox_word, setToggleCheckBox_word] = useState(false)
+  let [toggleCheckBox_meaning, setToggleCheckBox_meaning] = useState(false)
+  let [toggleCheckBox_example, setToggleCheckBox_example] = useState(false)
+  let [toggleCheckBox_img, setToggleCheckBox_img] = useState(false)
+  let [lang, setLang] = useState('en-IE')
+  let [intervalTime, setIntervalTime] = useState('10')
+  let [intervalUnit, setIntervalUnit] = useState(DURATIONS.second)
+  let [stages, setStages] = useState('5')
+  let [load, setLoad] = useState(false)
   let categoryName = navigation.state.params.categoryName
 
-  useEffect(() => {
-    loadSettings()
-  })
   const loadSettings = async () => {
-    let key =
-      navigation.state.params.categoryName +
-      '/' +
-      navigation.state.params.currentFile.name
+    let jsonSetting = JSON.parse(navigation.state.params.settings)
 
-    let array = await AsyncStorage.getItem(key) //داده های پیش فرض کتاب
-    let defaultCoef = JSON.parse(array)[0]
-    let defaultQuestionCase = JSON.parse(array)[1]
-    if (defaultCoef !== null || defaultCoef !== undefined) {
-      setCoefTime(defaultCoef)
-    }
-    if (defaultQuestionCase !== null || defaultQuestionCase !== undefined) {
-      setQuestionCase(parseInt(defaultQuestionCase))
+    if (jsonSetting !== null) {
+      setSubCategoryName(jsonSetting.name)
+      setCoefTime(jsonSetting.coefTime)
+      setToggleCheckBox_word(jsonSetting.questionOrder.word)
+      setToggleCheckBox_meaning(jsonSetting.questionOrder.meaning)
+      setToggleCheckBox_example(jsonSetting.questionOrder.example)
+      setToggleCheckBox_img(jsonSetting.questionOrder.img)
+      setLang(jsonSetting.ttsLang)
+      setIntervalTime(jsonSetting.intervalTime)
+      setIntervalUnit(jsonSetting.intervalUnit)
+      setStages(jsonSetting.stages)
+
+      setLoad(true)
     }
   }
+  useEffect(() => {
+    !load &&  loadSettings()
+  })
 
   const save = async () => {
-    Toast.show('این امکان فعلا وجود ندارد')
-    // if (
-    //   subCategoryName == null ||
-    //   subCategoryName == '' ||
-    //   parseFloat(coefTime) == null
-    // ) {
-    //   Alert.alert('نام زیر گروه نباید خالی باشد')
-    //   return
-    // }
-    // var obj = []
-    // createSubCategory(categoryName, subCategoryName, result => {
-    //   if (result) {
-    //     let path = categoryName + '/' + subCategoryName
-    //     writeToFile(path, subCategoryName + '.json', obj, result => {
-    //       if (result) {
-    //         let array = [coefTime, questionCase]
-    //         AsyncStorage.setItem(path, JSON.stringify(array))
-    //         navigation.navigate('learn')
-    //       }
-    //     })
-    //   }
-    // })
+    if (
+      subCategoryName == null ||
+      subCategoryName == '' ||
+      parseFloat(coefTime) == null
+    ) {
+      Alert.alert('نام زیر گروه نباید خالی باشد')
+      return
+    }
+ 
+    let obj = {
+      name: subCategoryName,
+      coefTime: coefTime,
+      questionOrder: {
+        word: toggleCheckBox_word,
+        meaning: toggleCheckBox_meaning,
+        example: toggleCheckBox_example,
+        img: toggleCheckBox_img,
+      },
+      ttsLang: lang,
+      intervalTime: intervalTime,
+      intervalUnit: intervalUnit,
+      stages: stages,
+    }
+    console.log(obj)
+    let path = categoryName + '/' + subCategoryName
+    writeToFile(path, subCategoryName + '.json', obj, result => {
+      if (result) {
+        navigation.navigate('subCategories')
+      }
+    })
   }
   return (
-    <LinearGradient
-      colors={['#4c669f', '#3b5998', '#192f6a']}
-      style={styles.linearGradient}>
-      <TextInput
-        style={styles.InputText}
-        placeholder='نام زیر گروه رو وارد کنید '
-        onChangeText={text => setSubCategoryName(text)}
-        defaultValue={subCategoryName}
-      />
-      <View style={{flexDirection: 'row'}}>
+    <ScrollView
+      contentContainerStyle={{flexGrow: 1}}
+      showsVerticalScrollIndicator={false}>
+      <LinearGradient
+        colors={['#4c669f', '#3b5998', '#192f6a']}
+        style={styles.linearGradient}>
         <TextInput
-          style={styles.InputTextCoef}
-          placeholder='ضریب'
-          keyboardType='numeric'
-          onChangeText={text => {
-            setCoefTime(text)
-          }}
-          value={coefTime}
-          defaultValue={coefTime}
+          style={styles.InputText}
+          placeholder='نام زیر گروه رو وارد کنید '
+          editable={false}
+          onChangeText={text => setSubCategoryName(text)}
+          defaultValue={subCategoryName}
         />
-        <Text style={styles.lableText}>(s)ضریب زمان پاسخگویی</Text>
-      </View>
-      <View style={{flexDirection: 'row'}}>
-        <Picker
-          defaultValue={questionCase}
-          selectedValue={questionCase}
-          style={styles.picker}
-          onValueChange={(itemValue, itemIndex) => setQuestionCase(itemValue)}>
-          <Picker.Item label='پرسش' value={QUESTION_CASE.englishWord} />
-          <Picker.Item label='پاسخ' value={QUESTION_CASE.meaning} />
-          <Picker.Item label='نمونه' value={QUESTION_CASE.example} />
-          <Picker.Item label='عکس' value={QUESTION_CASE.image} />
-        </Picker>
-        <Text style={styles.lableText}>مورد پرسش</Text>
-      </View>
-      <TouchableOpacity style={styles.NextBtn} onPress={() => save()}>
-        <Text style={styles.textBtn}>ذخیره</Text>
-      </TouchableOpacity>
-    </LinearGradient>
+        <View style={{flexDirection: 'row'}}>
+          <TextInput
+            style={styles.InputTextCoef}
+            placeholder='ضریب'
+            keyboardType='numeric'
+            onChangeText={text => {
+              setCoefTime(text)
+            }}
+            value={coefTime}
+            defaultValue={coefTime}
+          />
+          <Text style={styles.lableText}>(s)ضریب زمان پاسخگویی</Text>
+        </View>
+
+        <View
+          style={{flex: 1, alignItems: 'flex-end', width: '60%', margin: 20}}>
+          <Text
+            style={{
+              color: 'white',
+              fontFamily: 'IRANSansMobile_Bold',
+              fontSize: 20,
+            }}>
+            مورد پرسش
+          </Text>
+          <View style={{flexDirection: 'row'}}>
+            <CheckBox
+              disabled={false}
+              value={toggleCheckBox_word}
+              onValueChange={newValue => setToggleCheckBox_word(newValue)}
+            />
+            <Text style={styles.lableText}>پرسش</Text>
+          </View>
+          <View style={{flexDirection: 'row'}}>
+            <CheckBox
+              disabled={false}
+              value={toggleCheckBox_meaning}
+              onValueChange={newValue => setToggleCheckBox_meaning(newValue)}
+            />
+            <Text style={styles.lableText}>پاسخ</Text>
+          </View>
+          <View style={{flexDirection: 'row'}}>
+            <CheckBox
+              disabled={false}
+              value={toggleCheckBox_example}
+              onValueChange={newValue => setToggleCheckBox_example(newValue)}
+            />
+            <Text style={styles.lableText}>توضیحات</Text>
+          </View>
+          <View style={{flexDirection: 'row'}}>
+            <CheckBox
+              disabled={false}
+              value={toggleCheckBox_img}
+              onValueChange={newValue => setToggleCheckBox_img(newValue)}
+            />
+            <Text style={styles.lableText}>عکس</Text>
+          </View>
+        </View>
+        <View style={{alignItems: 'flex-start'}}>
+          <View style={{flexDirection: 'row'}}>
+            <Picker
+              selectedValue={intervalUnit}
+              style={{height: 50, width: 100, margin: 2, textColor: 'white'}}
+              onValueChange={(itemValue, itemIndex) =>
+                setIntervalUnit(itemValue)
+              }>
+              <Picker.Item label='ثانیه' value={DURATIONS.second} />
+              <Picker.Item label='دقیقه' value={DURATIONS.minute} />
+              <Picker.Item label='ساعت' value={DURATIONS.hour} />
+              <Picker.Item label='روز' value={DURATIONS.day} />
+            </Picker>
+            <TextInput
+              style={styles.inputTextIntervalTime}
+              placeholder='تعداد واحد زمانی'
+              onChangeText={text => setIntervalTime(text)}
+              value={intervalTime}
+              defaultValue={intervalTime}
+            />
+            <Text style={styles.lableText}>واحد زمانی</Text>
+          </View>
+          <View style={{flexDirection: 'row'}}>
+            <TextInput
+              style={styles.inputTextIntervalTime}
+              placeholder='تعداد مرتیه'
+              onChangeText={text => setStages(text)}
+              value={stages}
+              defaultValue={stages}
+            />
+            <Text style={styles.lableText}>تعداد مرتبه</Text>
+          </View>
+        </View>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <Picker
+            style={styles.picker}
+            selectedValue={lang}
+            style={{height: 50, width: 150, margin: 10}}
+            onValueChange={(itemValue, itemIndex) => setLang(itemValue)}
+            itemStyle={{
+              backgroundColor: 'grey',
+              color: 'black',
+              fontFamily: 'IRANSansMobile',
+              fontSize: 17,
+            }}>
+            <Picker.Item
+              label='انگلیسی_بریتانیا'
+              value={LANGUAGES.english_british}
+            />
+            <Picker.Item
+              label='انگلیسی_آمریکا'
+              value={LANGUAGES.english_american}
+            />
+            <Picker.Item label='فرانسوی' value={LANGUAGES.french} />
+            <Picker.Item label='آلمانی' value={LANGUAGES.deutsch_germany} />
+            <Picker.Item label='اسپانیایی' value={LANGUAGES.spanish} />
+            <Picker.Item label='روسی' value={LANGUAGES.russian} />
+            <Picker.Item label='ترکی' value={LANGUAGES.turkish} />
+            <Picker.Item label='چینی' value={LANGUAGES.chinese} />
+            <Picker.Item label='هندی' value={LANGUAGES.india} />
+            <Picker.Item label='ایتالیایی' value={LANGUAGES.italian} />
+            <Picker.Item label='پرتقالی' value={LANGUAGES.portuguese} />
+            <Picker.Item label='ژاپنی' value={LANGUAGES.japanese} />
+            <Picker.Item label='عربی' value={LANGUAGES.arabic} />
+          </Picker>
+          <Text style={styles.textSettingLang}>زبان text to speech</Text>
+        </View>
+        <TouchableOpacity style={styles.NextBtn} onPress={() => save()}>
+          <Text style={styles.textBtn}>ذخیره</Text>
+        </TouchableOpacity>
+      </LinearGradient>
+    </ScrollView>
   )
 }
 const EditCard = ({navigation}) => {

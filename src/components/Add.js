@@ -37,7 +37,7 @@ import {
 } from './FileManger'
 import moment from 'moment'
 import {VoiceRecorder} from './Voice'
-import {ASTORAGE_QC, LANGUAGES, QUESTION_CASE} from './consts'
+import {ASTORAGE_QC, DURATIONS, LANGUAGES, QUESTION_CASE} from './consts'
 
 const appendText = array => {
   let text = ''
@@ -89,22 +89,12 @@ const AddCard = ({navigation}) => {
     }
   }
   useEffect(() => {
-    // console.log(navigation.state.params)\
     loadSettings()
   })
   const loadSettings = async () => {
     requestMicrophone()
-
-    let key =
-      navigation.state.params.categoryName +
-      '/' +
-      navigation.state.params.subCategoryName
-
-    let array = await AsyncStorage.getItem(key) //داده های پیش فرض کتاب
-    let defaultCoef = JSON.parse(array)[0]
-    if (defaultCoef !== null || defaultCoef !== undefined) {
-      setCoefTime(defaultCoef)
-    }
+    if (JSON.parse(navigation.state.params.settings).coefTime !== null)
+      setCoefTime(JSON.parse(navigation.state.params.settings).coefTime)
   }
   const onPars = text => {
     let array = text.split('،')
@@ -280,12 +270,14 @@ const addLesson = ({navigation}) => {
 const addSubCategory = ({navigation}) => {
   let [subCategoryName, setSubCategoryName] = useState('')
   let [coefTime, setCoefTime] = useState('1.2')
-  // let [questionCase, setQuestionCase] = useState(0)
   let [toggleCheckBox_word, setToggleCheckBox_word] = useState(false)
   let [toggleCheckBox_meaning, setToggleCheckBox_meaning] = useState(false)
   let [toggleCheckBox_example, setToggleCheckBox_example] = useState(false)
   let [toggleCheckBox_img, setToggleCheckBox_img] = useState(false)
   let [lang, setLang] = useState('en-IE')
+  let [intervalTime, setIntervalTime] = useState('10')
+  let [intervalUnit, setIntervalUnit] = useState(DURATIONS.second)
+  let [stages, setStages] = useState('5')
   let categoryName = navigation.state.params.categoryName
 
   useEffect(() => {
@@ -298,7 +290,11 @@ const addSubCategory = ({navigation}) => {
         toggleCheckBox_img,
       ],
       lang,
+      intervalTime,
+      intervalUnit,
+      stages,
     ]
+    // console.log(array);
   })
 
   const save = async () => {
@@ -310,23 +306,30 @@ const addSubCategory = ({navigation}) => {
       Alert.alert('نام زیر گروه نباید خالی باشد')
       return
     }
-    var obj = []
+
     createSubCategory(categoryName, subCategoryName, result => {
       if (result) {
+        let obj = {
+          name: subCategoryName,
+          coefTime: coefTime,
+          questionOrder: {
+            word: toggleCheckBox_word,
+            meaning: toggleCheckBox_meaning,
+            example: toggleCheckBox_example,
+            img: toggleCheckBox_img,
+          },
+          ttsLang: lang,
+          intervalTime: intervalTime,
+          intervalUnit: intervalUnit,
+          stages: stages,
+        }
+        console.log(obj)
         let path = categoryName + '/' + subCategoryName
-        let array = [
-          coefTime,
-          [
-            toggleCheckBox_word,
-            toggleCheckBox_meaning,
-            toggleCheckBox_example,
-            toggleCheckBox_img,
-          ],
-          lang,
-        ]
-        console.log(array)
-        AsyncStorage.setItem(path, JSON.stringify(array))
-        navigation.navigate('subCategories')
+        writeToFile(path, subCategoryName + '.json', obj, result => {
+          if (result) {
+            navigation.navigate('subCategories')
+          }
+        })
       }
     })
   }
@@ -398,6 +401,39 @@ const addSubCategory = ({navigation}) => {
               onValueChange={newValue => setToggleCheckBox_img(newValue)}
             />
             <Text style={styles.lableText}>عکس</Text>
+          </View>
+        </View>
+        <View style={{alignItems: 'flex-start'}}>
+          <View style={{flexDirection: 'row'}}>
+            <Picker
+              selectedValue={intervalUnit}
+              style={{height: 50, width: 100, margin: 2, textColor: 'white'}}
+              onValueChange={(itemValue, itemIndex) =>
+                setIntervalUnit(itemValue)
+              }>
+              <Picker.Item label='ثانیه' value={DURATIONS.second} />
+              <Picker.Item label='دقیقه' value={DURATIONS.minute} />
+              <Picker.Item label='ساعت' value={DURATIONS.hour} />
+              <Picker.Item label='روز' value={DURATIONS.day} />
+            </Picker>
+            <TextInput
+              style={styles.inputTextIntervalTime}
+              placeholder='تعداد واحد زمانی'
+              onChangeText={text => setIntervalTime(text)}
+              value={intervalTime}
+              defaultValue={intervalTime}
+            />
+            <Text style={styles.lableText}>واحد زمانی</Text>
+          </View>
+          <View style={{flexDirection: 'row'}}>
+            <TextInput
+              style={styles.inputTextIntervalTime}
+              placeholder='تعداد مرتیه'
+              onChangeText={text => setStages(text)}
+              value={stages}
+              defaultValue={stages}
+            />
+            <Text style={styles.lableText}>تعداد مرتبه</Text>
           </View>
         </View>
         <View
@@ -588,6 +624,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
     color: 'red',
+  },
+  inputTextIntervalTime: {
+    width: 100,
+    height: 50,
+    borderWidth: 1,
+    color: 'white',
+    borderColor: 'red',
+    borderRadius: 5,
+    margin: 10,
+    textAlign: 'center',
   },
 })
 

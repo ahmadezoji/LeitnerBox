@@ -23,6 +23,7 @@ import moment from 'moment'
 import {Icon} from 'native-base'
 import {VoicePlayer} from './Voice'
 import Tts from 'react-native-tts'
+import {DURATIONS} from './consts'
 
 const appendText = array => {
   let text = ''
@@ -105,6 +106,7 @@ export default class Card extends React.Component {
         playerSpeed: 1.0,
         loaded: false,
         lang: 'en-IE',
+        intervalUnit: null,
       })
   }
   async componentDidMount () {
@@ -117,23 +119,16 @@ export default class Card extends React.Component {
 
     if (this.props.navigation.state.params.words[index].readDate == 'null') {
       console.log('start card')
-      let today = new Date()
-      this.props.navigation.state.params.words[index].position = 0
-      this.props.navigation.state.params.words[index].readDate = today
-      this.props.navigation.state.params.words[index].nextReviewDate = today
-      this.save()
+      this.resetPosition()
     }
   }
   async loadSettings () {
-    let key =
-      this.props.navigation.state.params.categoryName +
-      '/' +
-      this.props.navigation.state.params.subCategoryName
-
-    let array = await AsyncStorage.getItem(key)
-    let json = JSON.parse(array)
-
-    this.setState({lang: json[2]})
+    if (JSON.parse(this.props.navigation.state.params.settings) !== null)
+      this.setState({
+        lang: JSON.parse(this.props.navigation.state.params.settings).ttsLang,
+        intervalUnit: JSON.parse(this.props.navigation.state.params.settings)
+          .intervalUnit,
+      })
   }
   async save () {
     let path =
@@ -153,8 +148,33 @@ export default class Card extends React.Component {
       },
     )
   }
+  async resetPosition () {
+    let index = await this.props.navigation.state.params.index
+    let today = new Date()
+    this.props.navigation.state.params.words[index].position = 0
+    this.props.navigation.state.params.words[index].readDate = today
+    this.props.navigation.state.params.words[index].nextReviewDate = today
+    this.save()
+    this.props.navigation.goBack()
+  }
   render () {
     let path = this.props.navigation.state.params.currentFile.path
+    let nextTime = ''
+    let pos = ''
+    if (
+      this.state.intervalUnit !== null &&
+      this.state.word !== null &&
+      this.state.word.nextReviewDate !== 'null'
+    ) {
+      let time_en = moment.unix(new Date(this.state.word.nextReviewDate))
+      let time_st = moment.unix(new Date())
+      let diff = time_en.diff(time_st, this.state.intervalUnit)
+
+      pos = 'جایگاه جدید :  ' + this.state.word.position
+      nextTime =
+        'مرور بعدی :  ' + parseInt(diff) / 1000 + ' ' + this.state.intervalUnit
+    }
+
     return (
       <LinearGradient
         colors={['#4c669f', '#3b5998', '#192f6a']}
@@ -198,10 +218,13 @@ export default class Card extends React.Component {
                 }}
                 style={styles.wordImage}
               />
-              <Text style={styles.reviewDate}>
-                {this.state.word.nextReviewDate}
-              </Text>
-              <Text style={styles.position}>{this.state.word.position}</Text>
+              <Text style={styles.reviewDate}>{nextTime}</Text>
+              <Text style={styles.position}>{pos}</Text>
+              <TouchableOpacity
+                style={styles.browsBtn}
+                onPress={() => this.resetPosition()}>
+                <Text style={styles.textBtn}>reset</Text>
+              </TouchableOpacity>
             </View>
           )}
         </ScrollView>

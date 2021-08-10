@@ -17,8 +17,7 @@ import {
 } from 'react-native'
 import LottieView from 'lottie-react-native'
 import LinearGradient from 'react-native-linear-gradient'
-import {getFileContent, getRootFiles} from './FileManger'
-import {STEPS_COUNT} from './consts'
+import {getFileContent, getRootFiles, getRootFolders, readSettingJson} from './FileManger'
 export default class Review extends React.Component {
   constructor (props) {
     super(props)
@@ -33,7 +32,7 @@ export default class Review extends React.Component {
   }
   _onRefresh = () => {
     this.setState({refreshing: true})
-    getRootFiles('/', data => {
+    getRootFolders('/', data => {
       this.setState({categories: data, refreshing: false})
     })
   }
@@ -189,7 +188,7 @@ const ReviewSubCategories = ({navigation}) => {
   const _onRefresh = () => {
     setRefreshing(false)
     let path = '/' + categoryName
-    getRootFiles(path, data => {
+    getRootFolders(path, data => {
       setSubCategories(data)
       setRefreshing(true)
     })
@@ -249,7 +248,7 @@ const ReviewSubCategories = ({navigation}) => {
     </LinearGradient>
   )
 }
-const RenderLessons = ({item, navigation}) => {
+const RenderLessons = ({item, navigation,settings}) => {
   let [count, setCount] = useState('0')
   let categoryName = navigation.state.params.categoryName
   let subCategoryName = navigation.state.params.subCategoryName
@@ -267,7 +266,7 @@ const RenderLessons = ({item, navigation}) => {
           if (
             new Date(word.nextReviewDate) <= today &&
             word.position >= 0 &&
-            word.position <= STEPS_COUNT
+            word.position <= JSON.parse(settings).stages
           ) {
             i = i + 1
           }
@@ -283,6 +282,7 @@ const RenderLessons = ({item, navigation}) => {
           currentFile: item,
           categoryName: categoryName,
           subCategoryName : subCategoryName,
+          settings: settings,
         })
       }
       style={{
@@ -314,14 +314,29 @@ const RenderLessons = ({item, navigation}) => {
 const ReviewLessons = ({navigation}) => {
   let [refreshing, setRefreshing] = useState(false)
   let [lessons, setLessons] = useState([])
+  let [settings, setSettings] = useState(null)
   let categoryName = navigation.state.params.categoryName
   let subCategoryName = navigation.state.params.currentFile.name
 
   const _onRefresh = () => {
     setRefreshing(false)
     let path = '/' + categoryName + '/' + subCategoryName
-    getRootFiles(path, data => {
+    // getRootFolders(path, data => {
+    //   setLessons(data)
+    //   setRefreshing(true)
+    // })
+    getRootFolders(path, data => {
       setLessons(data)
+      getRootFiles(path, data => {
+        let array = data.filter(item =>
+          item.name.includes(subCategoryName + '.json'),
+        )
+        let path = array[0].path
+        readSettingJson(path, data => {
+          setSettings(data)
+          navigation.state.params.settings = data
+        })
+      })
       setRefreshing(true)
     })
   }
@@ -345,7 +360,7 @@ const ReviewLessons = ({navigation}) => {
         pagingEnabled={true}
         data={lessons}
         renderItem={({item}) => (
-          <RenderLessons item={item} navigation={navigation} />
+          <RenderLessons item={item} navigation={navigation} settings={settings}/>
         )}
         keyExtractor={(item, index) => {
           return item.id

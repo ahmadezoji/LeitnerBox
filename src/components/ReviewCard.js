@@ -81,10 +81,13 @@ export default class ReviewCard extends React.Component {
       recommendBtn: null,
       viewArrays: [],
       lang: 'en-IE',
+      intervalTime: '10',
+      intervalUnit: DURATIONS.second,
+      stages: 5,
     }
   }
   componentWillMount () {
-    // this.startTimer(true)
+    this.startTimer(true)
   }
   async componentDidMount () {
     let words = await this.props.navigation.state.params.words
@@ -92,6 +95,7 @@ export default class ReviewCard extends React.Component {
     await this.setState({
       word: words[index],
       loaded: true,
+      arraySetting: [],
     })
 
     this.loadSettings()
@@ -115,8 +119,15 @@ export default class ReviewCard extends React.Component {
     if (this.state.isActive) clearInterval(this.intervalTimer)
   }
   async save (coef) {
-    let interval = await AsyncStorage.getItem(ASTORAGE_TIME)
-    let unit = await AsyncStorage.getItem(ASTORAGE_UNIT)
+    // let interval = await AsyncStorage.getItem(ASTORAGE_TIME)
+    // let unit = await AsyncStorage.getItem(ASTORAGE_UNIT)
+    let interval = await this.state.intervalTime
+    let unit = await this.state.intervalUnit
+    let STEPS_COUNT = await this.state.stages
+
+    console.log(unit);
+
+    console.log(interval, unit)
 
     if (interval == null || unit == null) {
       Alert.alert('از منو پروفایل ضریب زمانی و وارد کنید')
@@ -183,7 +194,7 @@ export default class ReviewCard extends React.Component {
           let diff = time_en.diff(time_st, unit)
 
           Toast.show('جایگاه جدید :  ' + pos)
-          Toast.show('مرور بعدی :  ' + parseInt(diff)/1000 + ' ' + unit)
+          Toast.show('مرور بعدی :  ' + parseInt(diff) / 1000 + ' ' + unit)
         }
         this.props.navigation.goBack()
       },
@@ -217,17 +228,20 @@ export default class ReviewCard extends React.Component {
     }
   }
   async loadSettings () {
-    let key =
-      this.props.navigation.state.params.categoryName +
-      '/' +
-      this.props.navigation.state.params.subCategoryName
+    
+    if (JSON.parse(this.props.navigation.state.params.settings) !== null)
+      this.setState({
+        viewArrays: JSON.parse(this.props.navigation.state.params.settings)
+          .questionOrder,
+        lang: JSON.parse(this.props.navigation.state.params.settings).ttsLang,
+        intervalTime: JSON.parse(this.props.navigation.state.params.settings)
+          .intervalTime,
+        intervalUnit: JSON.parse(this.props.navigation.state.params.settings)
+          .intervalUnit,
+        stages: JSON.parse(this.props.navigation.state.params.settings).stages,
+      })
 
-    let array = await AsyncStorage.getItem(key)
-    let json = JSON.parse(array)
-
-    if (array !== null) {
-      await this.setState({viewArrays: json[1], lang: json[2]})
-    }
+      
   }
   renderQuestion = path => {
     return (
@@ -279,10 +293,10 @@ export default class ReviewCard extends React.Component {
     let path = this.props.navigation.state.params.currentFile.path
     let defaultCaseView = (
       <View>
-        {this.state.viewArrays[0] && <this.renderQuestion path={path} />}
-        {this.state.viewArrays[1] && <this.renderAnswer path={path} />}
-        {this.state.viewArrays[2] && <this.renderExample path={path} />}
-        {this.state.viewArrays[3] && <this.renderImage path={path} />}
+        {this.state.viewArrays.word && <this.renderQuestion path={path} />}
+        {this.state.viewArrays.meaning && <this.renderAnswer path={path} />}
+        {this.state.viewArrays.example && <this.renderExample path={path} />}
+        {this.state.viewArrays.img && <this.renderImage path={path} />}
       </View>
     )
 

@@ -14,9 +14,13 @@ import Splash from './components/Spalsh'
 import {Colors} from './components/Colors'
 import {Root, Icon} from 'native-base'
 import {Alert, Text, TouchableOpacity, View} from 'react-native'
-import Words, {shareToFiles} from './components/Words'
+import Words from './components/Words'
 import Card from './components/Card'
-import {deletFile} from './components/FileManger'
+import {
+  deletFile,
+  extractSubCategory,
+  shareToFiles,
+} from './components/FileManger'
 import ReviewCard, {MyTimer} from './components/ReviewCard'
 import ReviewWords, {getReviewWords} from './components/ReviewWords'
 import {writeToFile} from './components/FileManger'
@@ -156,26 +160,6 @@ const ReviewStack = createStackNavigator(
           textAlignVertical: 'center',
         },
         headerTitle: navigation.state.params.currentFile.name.split('.')[0],
-        headerRight: () => (
-          <View style={{flexDirection: 'row', marginRight: 2}}>
-            <TouchableOpacity
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: 2,
-              }}
-              onPress={() => {
-                shareToFiles(this.state.downloadUri)
-              }}>
-              <Icon
-                name='share-alternative'
-                type='Entypo'
-                fontSize={25}
-                style={{color: 'black', fontSize: 25}}
-              />
-            </TouchableOpacity>
-          </View>
-        ),
       }),
     },
     reviewSubCategories: {
@@ -188,26 +172,6 @@ const ReviewStack = createStackNavigator(
           textAlign: 'center',
         },
         headerTitle: navigation.state.params.categoryName,
-        headerRight: () => (
-          <View style={{flexDirection: 'row', marginRight: 2}}>
-            <TouchableOpacity
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: 2,
-              }}
-              onPress={() => {
-                shareToFiles(this.state.downloadUri)
-              }}>
-              <Icon
-                name='share-alternative'
-                type='Entypo'
-                fontSize={25}
-                style={{color: 'black', fontSize: 25}}
-              />
-            </TouchableOpacity>
-          </View>
-        ),
       }),
     },
     reviewLessons: {
@@ -220,6 +184,27 @@ const ReviewStack = createStackNavigator(
           textAlign: 'center',
         },
         headerTitle: navigation.state.params.currentFile.name.split('.')[0],
+        headerRight: () => (
+          <TouchableOpacity
+            style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: 2,
+            }}
+            onPress={() => {
+              shareToFiles(
+                navigation.state.params.currentFile.path,
+                navigation.state.params.currentFile.name,
+              )
+              // console.log(navigation.state.params.currentFile.path,navigation.state.params.currentFile.name)
+            }}>
+            <Icon
+              name='export'
+              type='MaterialCommunityIcons'
+              style={{color: 'black', fontSize: 30}}
+            />
+          </TouchableOpacity>
+        ),
       }),
     },
   },
@@ -406,22 +391,7 @@ const LearnStack = createStackNavigator(
                 }}
               />
             </TouchableOpacity>
-            {/* <TouchableOpacity
-              TouchableOpacity
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: 2,
-              }}
-              onPress={() =>
-                navigation.push('editSubCategory', navigation.state.params)
-              }>
-              <Icon
-                name='edit'
-                type='MaterialIcons'
-                style={{color: 'black', fontSize: 25}}
-              />
-            </TouchableOpacity> */}
+
             <TouchableOpacity
               style={{
                 alignItems: 'center',
@@ -511,6 +481,20 @@ const LearnStack = createStackNavigator(
               <Icon
                 name='add-outline'
                 type='Ionicons'
+                style={{color: 'black', fontSize: 30}}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() =>
+                // console.log(navigation.state.params.currentFile.path)
+                extractSubCategory(
+                  navigation.state.params.currentFile.path,
+                  navigation.state.params.currentFile.name,
+                )
+              }>
+              <Icon
+                name='import'
+                type='MaterialCommunityIcons'
                 style={{color: 'black', fontSize: 30}}
               />
             </TouchableOpacity>
@@ -619,6 +603,22 @@ const LearnStack = createStackNavigator(
                 name='add-outline'
                 type='Ionicons'
                 style={{color: 'black', fontSize: 30}}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              TouchableOpacity
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: 2,
+              }}
+              onPress={() =>
+                navigation.push('editSubCategory', navigation.state.params)
+              }>
+              <Icon
+                name='edit'
+                type='MaterialIcons'
+                style={{color: 'black', fontSize: 25}}
               />
             </TouchableOpacity>
             <TouchableOpacity
