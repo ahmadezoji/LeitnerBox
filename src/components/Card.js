@@ -21,18 +21,11 @@ import LinearGradient from 'react-native-linear-gradient'
 import {ifExistFile, writeToFile} from './FileManger'
 import moment from 'moment'
 import {Icon} from 'native-base'
-import {VoicePlayer} from './Voice'
+import {VoicePlayer, VoiceRecorderWithOptions} from './Voice'
 import Tts from 'react-native-tts'
 import {DURATIONS} from './consts'
+import {appendText} from './Utils'
 
-const appendText = array => {
-  let text = ''
-  for (let i = 0; i < array.length; i++) {
-    if (i !== array.length - 1) text = text + array[i] + ','
-    else text = text + array[i]
-  }
-  return text
-}
 const TTSBox = params => {
   let [speed, setSpeed] = useState(6)
   let [text, setText] = useState(params.inputText)
@@ -155,7 +148,6 @@ export default class Card extends React.Component {
     this.props.navigation.state.params.words[index].readDate = today
     this.props.navigation.state.params.words[index].nextReviewDate = today
     this.save()
-    this.props.navigation.goBack()
   }
   render () {
     let path = this.props.navigation.state.params.currentFile.path
@@ -174,11 +166,11 @@ export default class Card extends React.Component {
       nextTime =
         'مرور بعدی :  ' + parseInt(diff) / 1000 + ' ' + this.state.intervalUnit
     }
-
     return (
       <LinearGradient
         colors={['#4c669f', '#3b5998', '#192f6a']}
         style={styles.linearGradient}>
+        
         <StatusBar translucent backgroundColor='transparent' />
         <ScrollView
           contentContainerStyle={{flexGrow: 1}}
@@ -195,10 +187,12 @@ export default class Card extends React.Component {
               <VoicePlayer inputpath={path + '/' + this.state.word.voiceUri1} />
 
               <Text style={styles.meaningText}>{this.state.word.meaning}</Text>
-              <TTSBox
-                inputText={this.state.word.meaning}
-                lang={this.state.lang}
-              />
+              {this.state.word.meaning && (
+                <TTSBox
+                  inputText={appendText(this.state.word.meaning)}
+                  lang={this.state.lang}
+                />
+              )}
               <VoicePlayer inputpath={path + '/' + this.state.word.voiceUri2} />
 
               <Text style={styles.exampleText}>{this.state.word.example}</Text>

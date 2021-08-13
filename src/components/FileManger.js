@@ -191,7 +191,43 @@ const extractSubCategory = async (categoryPath, categoryName) => {
   }
 }
 
+const extractLesson = async (subCategoryPath, subCategoryName) => {
+  try {
+    const charset = 'UTF-8'
+    FilePickerManager.showFilePicker(null, response => {
+      // console.log('Response = ', response)
+
+      if (response.didCancel) {
+        console.log('User cancelled file picker')
+      } else if (response.error) {
+        console.log('FilePickerManager Error: ', response.error)
+      } else {
+        if (response.fileName.includes('.zip')) {
+          let lessonName = response.fileName.split('.')[0]
+          createSubCategory(subCategoryName, lessonName, result => {
+            if (result) {
+              console.log(subCategoryPath + '/' + lessonName);
+              unzip(response.path, subCategoryPath + '/' + lessonName, charset)
+                .then(path => {
+                  console.log(`unzip completed at ${path}`)
+                })
+                .catch(error => {
+                  console.error(error)
+                })
+            }
+          })
+        } else {
+          Toast.show('فایل نا معتبر')
+        }
+      }
+    })
+  } catch (err) {
+    console.log(err)
+  }
+}
+
 export {
+  extractLesson,
   readSettingJson,
   getRootFolders,
   extractSubCategory,

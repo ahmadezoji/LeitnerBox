@@ -30,8 +30,9 @@ import {
 } from './consts'
 import moment from 'moment'
 import {Icon} from 'native-base'
-import {VoicePlayer} from './Voice'
+import {VoicePlayer, VoiceRecorderWithOptions} from './Voice'
 import {TTSBox} from './Card'
+import {appendText} from './Utils'
 let RNFS = require('react-native-fs')
 const formatNumber = number => `0${number}`.slice(-2)
 
@@ -125,7 +126,7 @@ export default class ReviewCard extends React.Component {
     let unit = await this.state.intervalUnit
     let STEPS_COUNT = await this.state.stages
 
-    console.log(unit);
+    console.log(unit)
 
     console.log(interval, unit)
 
@@ -228,7 +229,7 @@ export default class ReviewCard extends React.Component {
     }
   }
   async loadSettings () {
-    
+    console.log(JSON.parse(this.props.navigation.state.params.settings).ttsLang)
     if (JSON.parse(this.props.navigation.state.params.settings) !== null)
       this.setState({
         viewArrays: JSON.parse(this.props.navigation.state.params.settings)
@@ -240,8 +241,6 @@ export default class ReviewCard extends React.Component {
           .intervalUnit,
         stages: JSON.parse(this.props.navigation.state.params.settings).stages,
       })
-
-      
   }
   renderQuestion = path => {
     return (
@@ -275,7 +274,12 @@ export default class ReviewCard extends React.Component {
     return (
       <View style={{justifyContent: 'center', alignItems: 'center'}}>
         <Text style={styles.meaningText}>{this.state.word.meaning}</Text>
-        <TTSBox inputText={this.state.word.meaning} lang={this.state.lang} />
+        {this.state.word.meaning && (
+          <TTSBox
+            inputText={appendText(this.state.word.meaning)}
+            lang={this.state.lang}
+          />
+        )}
         <VoicePlayer inputpath={path.path + '/' + this.state.word.voiceUri2} />
       </View>
     )
@@ -305,6 +309,7 @@ export default class ReviewCard extends React.Component {
         colors={['#e68d03', '#d7d0c4', '#a28450']}
         style={styles.linearGradient}>
         <StatusBar translucent backgroundColor='transparent' />
+       
         <ScrollView contentContainerStyle={{flexGrow: 1}}>
           <View style={styles.container}>
             {!this.state.showOver && defaultCaseView}
@@ -315,6 +320,7 @@ export default class ReviewCard extends React.Component {
                 {this.state.showOver ? 'بستن' : 'نمایش پاسخ'}
               </Text>
             </TouchableOpacity>
+
             {this.state.showOver && (
               <View style={styles.container}>
                 <this.renderQuestion path={path} />
@@ -432,6 +438,7 @@ export default class ReviewCard extends React.Component {
             )}
           </View>
         </ScrollView>
+        <VoiceRecorderWithOptions open={true} />
       </LinearGradient>
     )
   }

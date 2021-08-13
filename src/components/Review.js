@@ -17,7 +17,12 @@ import {
 } from 'react-native'
 import LottieView from 'lottie-react-native'
 import LinearGradient from 'react-native-linear-gradient'
-import {getFileContent, getRootFiles, getRootFolders, readSettingJson} from './FileManger'
+import {
+  getFileContent,
+  getRootFiles,
+  getRootFolders,
+  readSettingJson,
+} from './FileManger'
 export default class Review extends React.Component {
   constructor (props) {
     super(props)
@@ -248,7 +253,7 @@ const ReviewSubCategories = ({navigation}) => {
     </LinearGradient>
   )
 }
-const RenderLessons = ({item, navigation,settings}) => {
+const RenderLessons = ({item, navigation, settings}) => {
   let [count, setCount] = useState('0')
   let categoryName = navigation.state.params.categoryName
   let subCategoryName = navigation.state.params.subCategoryName
@@ -257,23 +262,27 @@ const RenderLessons = ({item, navigation,settings}) => {
     let today = new Date()
     let path = item.path
     let name = item.name + '.json'
-    getFileContent(path, name, result => {
-      let array = JSON.parse(result)
-      let i = 0
-      for (let index = 0; index < array.length; index++) {
-        let word = array[index]
-        if (JSON.stringify(word) !== 'null' && JSON.stringify(word) !== null) {
+    JSON.parse(settings) !== null &&
+      getFileContent(path, name, result => {
+        let array = JSON.parse(result)
+        let i = 0
+        for (let index = 0; index < array.length; index++) {
+          let word = array[index]
           if (
-            new Date(word.nextReviewDate) <= today &&
-            word.position >= 0 &&
-            word.position <= JSON.parse(settings).stages
+            JSON.stringify(word) !== 'null' &&
+            JSON.stringify(word) !== null
           ) {
-            i = i + 1
+            if (
+              new Date(word.nextReviewDate) <= today &&
+              word.position >= 0 &&
+              word.position <= JSON.parse(settings).stages
+            ) {
+              i = i + 1
+            }
           }
         }
-      }
-      setCount(`لغات قابل مرور : ${i}`)
-    })
+        setCount(`لغات قابل مرور : ${i}`)
+      })
   })
   return (
     <TouchableOpacity
@@ -281,7 +290,7 @@ const RenderLessons = ({item, navigation,settings}) => {
         navigation.push('reviewwords', {
           currentFile: item,
           categoryName: categoryName,
-          subCategoryName : subCategoryName,
+          subCategoryName: subCategoryName,
           settings: settings,
         })
       }
@@ -360,7 +369,11 @@ const ReviewLessons = ({navigation}) => {
         pagingEnabled={true}
         data={lessons}
         renderItem={({item}) => (
-          <RenderLessons item={item} navigation={navigation} settings={settings}/>
+          <RenderLessons
+            item={item}
+            navigation={navigation}
+            settings={settings}
+          />
         )}
         keyExtractor={(item, index) => {
           return item.id

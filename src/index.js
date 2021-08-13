@@ -19,6 +19,8 @@ import Card from './components/Card'
 import {
   deletFile,
   extractSubCategory,
+  getFileContent,
+  getRootFolders,
   shareToFiles,
 } from './components/FileManger'
 import ReviewCard, {MyTimer} from './components/ReviewCard'
@@ -160,6 +162,26 @@ const ReviewStack = createStackNavigator(
           textAlignVertical: 'center',
         },
         headerTitle: navigation.state.params.currentFile.name.split('.')[0],
+        headerRight: () => (
+          <TouchableOpacity
+            style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: 2,
+            }}
+            onPress={() => {
+              shareToFiles(
+                navigation.state.params.currentFile.path,
+                navigation.state.params.currentFile.name,
+              )
+            }}>
+            <Icon
+              name='export'
+              type='MaterialCommunityIcons'
+              style={{color: 'black', fontSize: 30}}
+            />
+          </TouchableOpacity>
+        ),
       }),
     },
     reviewSubCategories: {
@@ -622,6 +644,20 @@ const LearnStack = createStackNavigator(
               />
             </TouchableOpacity>
             <TouchableOpacity
+              onPress={() =>
+                // console.log(navigation.state.params.currentFile.path,navigation.state.params.currentFile.name)
+                extractSubCategory(
+                  navigation.state.params.currentFile.path,
+                  navigation.state.params.currentFile.name,
+                )
+              }>
+              <Icon
+                name='import'
+                type='MaterialCommunityIcons'
+                style={{color: 'black', fontSize: 30}}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
               style={{
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -692,7 +728,56 @@ const ProfileStack = createStackNavigator(
   },
 )
 let hasReviewWord = 0
-getReviewWords(result => (hasReviewWord = result))
+const getBadge = () => {
+  let reviewCnt = 0
+  hasReviewWord = 0
+  getRootFolders('/', category => {
+    for (let i = 0; i < category.length; i++) {
+      let pathCategory = '/' + category[i].name
+      getRootFolders(pathCategory, subCategories => {
+        for (let j = 0; j < subCategories.length; j++) {
+          let pathSubCategory =
+            '/' + category[i].name + '/' + subCategories[j].name
+          getRootFolders(pathSubCategory, lessons => {
+            for (let k = 0; k < lessons.length; k++) {
+              let pathFile = lessons[k].path
+              let FileName = lessons[k].name + '.json'
+
+              getFileContent(pathFile, FileName, result => {
+                let today = new Date()
+                let j = 0
+                for (
+                  let index = 0;
+                  index < JSON.parse(result).length;
+                  index++
+                ) {
+                  let review = new Date(
+                    JSON.parse(result)[index].nextReviewDate,
+                  )
+
+                  if (
+                    review <= today &&
+                    JSON.parse(result)[index].position > -1
+                  ) {
+                    hasReviewWord = hasReviewWord + 1
+                  }
+                }
+              })
+            }
+          })
+        }
+      })
+    }
+  })
+}
+const timerTask = () => {
+  getBadge()
+  setTimeout(() => {
+    timerTask()
+  }, 1000)
+}
+timerTask()
+
 const TabNavigator = createMaterialBottomTabNavigator(
   {
     LEARN: {

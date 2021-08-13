@@ -26,6 +26,7 @@ import {
 import moment from 'moment'
 import Profile from './Profile'
 import {ASTORAGE_TIME, ASTORAGE_UNIT} from './consts'
+import { VoiceRecorderWithOptions } from './Voice'
 // const words = require('../assets/words.json')
 export default class Learn extends React.Component {
   constructor (props) {

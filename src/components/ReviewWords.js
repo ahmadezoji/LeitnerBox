@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-community/async-storage'
-import React from 'react'
+import React, {useState, useEffect} from 'react'
 import {
   StatusBar,
   Image,
@@ -19,36 +19,64 @@ import LottieView from 'lottie-react-native'
 import LinearGradient from 'react-native-linear-gradient'
 import {getFileContent, getRootFiles, getRootFolders} from './FileManger'
 import moment from 'moment'
-const getReviewWords = async callback => {
+export const getReviewWords = async callback => {
+  // let [count,setCount] = useState(0)
   let pathCategory = ''
   let reviewCnt = 0
-  getRootFolders('/', category => {
-    console.log('for badge');
-    for (let i = 0; i < category.length; i++) {
-      pathCategory = '/' + category[i].name
-      getRootFolders(pathCategory, subCategories => {
-        for (let j = 0; j < subCategories.length; j++) {
-          let pathFile = subCategories[j].path
-          let FileName = subCategories[j].name + '.json'
+  // getRootFolders('/', category => {
+  //   reviewCnt = 20
+  //   // for (let i = 0; i < category.length; i++) {
+  //   //   pathCategory = '/' + category[i].name
+  //   //   getRootFolders(pathCategory, subCategories => {
+  //   //     for (let j = 0; j < subCategories.length; j++) {
+  //   //       let pathSubCategory =
+  //   //         '/' + category[i].name + '/' + subCategories[j].name
+  //   //       getRootFolders(pathSubCategory, lessons => {
+  //   //         for (let k = 0; k < lessons.length; k++) {
+  //   //           let pathFile = lessons[k].path
+  //   //           let FileName = lessons[k].name + '.json'
 
-          getFileContent(pathFile, FileName, result => {
-            let today = new Date()
-            let j = 0
-            // console.log(JSON.parse(result));
-            for (let index = 0; index < JSON.parse(result).length; index++) {
-              let review = new Date(JSON.parse(result)[index].nextReviewDate)
-              if (review <= today && JSON.parse(result)[index].position > -1) {
-                reviewCnt = reviewCnt + 1
-                callback(reviewCnt)
-              }
-            }
-          })
-        }
-      })
-    }
+  //   //           getFileContent(pathFile, FileName, result => {
+  //   //             let today = new Date()
+  //   //             let j = 0
+  //   //             for (
+  //   //               let index = 0;
+  //   //               index < JSON.parse(result).length;
+  //   //               index++
+  //   //             ) {
+  //   //               let review = new Date(
+  //   //                 JSON.parse(result)[index].nextReviewDate,
+  //   //               )
+
+  //   //               if (
+  //   //                 review <= today &&
+  //   //                 JSON.parse(result)[index].position > -1
+  //   //               ) {
+  //   //                 // console.log('ommad')
+  //   //                 // reviewCnt = reviewCnt + 1
+  //   //                 // setCount(count + 1)
+  //   //               }
+  //   //             }
+  //   //           })
+  //   //         }
+  //   //       })
+  //   //     }
+  //   //   })
+  //   // }
+  // })
+  var promise1 = new Promise(function (resolve, reject) {
+    resolve('foo')
   })
-}
 
+  let myval = 'a'
+  promise1
+    .then(function (value) {
+      myval = value
+    })
+    .then(function () {
+      callback(myval)
+    })
+}
 export default class ReviewWords extends React.Component {
   constructor (props) {
     super(props)
@@ -56,7 +84,7 @@ export default class ReviewWords extends React.Component {
     this.state = {
       words: [],
       refreshing: false,
-      stages : null
+      stages: null,
     }
   }
   onFocusFunction = () => {
@@ -68,9 +96,9 @@ export default class ReviewWords extends React.Component {
     })
     // this._onRefresh()
     let jsonSetting = JSON.parse(this.props.navigation.state.params.settings)
-    await this.setState({stages:jsonSetting.stages})
+    await this.setState({stages: jsonSetting.stages})
 
-    console.log('stage : ',this.state.stages);
+    console.log('stage : ', this.state.stages)
   }
   async _onRefresh () {
     this.today = new Date()
@@ -180,4 +208,4 @@ let styles = StyleSheet.create({
   },
 })
 
-export {getReviewWords}
+// export {getReviewWords}

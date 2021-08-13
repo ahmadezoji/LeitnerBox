@@ -38,16 +38,7 @@ import {
 import moment from 'moment'
 import {VoiceRecorder} from './Voice'
 import {ASTORAGE_QC, DURATIONS, LANGUAGES, QUESTION_CASE} from './consts'
-
-const appendText = array => {
-  let text = ''
-  for (let i = 0; i < array.length; i++) {
-    if (i !== array.length - 1) text = text + array[i] + ','
-    else text = text + array[i]
-  }
-  return text
-}
-
+import { appendText } from './Utils'
 const editSubCategory = ({navigation}) => {
   let [subCategoryName, setSubCategoryName] = useState('')
   let [coefTime, setCoefTime] = useState('1.2')
@@ -108,7 +99,6 @@ const editSubCategory = ({navigation}) => {
       intervalUnit: intervalUnit,
       stages: stages,
     }
-    console.log(obj)
     let path = categoryName + '/' + subCategoryName
     writeToFile(path, subCategoryName + '.json', obj, result => {
       if (result) {
@@ -286,7 +276,7 @@ const EditCard = ({navigation}) => {
   let [position, setPosition] = useState(word.position)
 
   useEffect(() => {
-    console.log(pathFile + '/' + voice1Path)
+    // console.log(pathFile + '/' + voice1Path)
     // console.log(navigation.state.params)
   })
   const onPars = text => {

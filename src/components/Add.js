@@ -39,6 +39,52 @@ import moment from 'moment'
 import {VoiceRecorder} from './Voice'
 import {ASTORAGE_QC, DURATIONS, LANGUAGES, QUESTION_CASE} from './consts'
 
+const MyTextInput = params => {
+  let [activeHighlighter, setActiveHighlighter] = useState(false)
+  let [text, setText] = useState(params.defaultText)
+  const styleInput = [
+    {
+      width: 200,
+      height: 50,
+      borderRadius: 5,
+      backgroundColor: 'white',
+      margin: 10,
+      color: 'black',
+    },
+  ]
+  return (
+    <View style={{flexDirection: 'row', justifyContent: 'center'}}>
+      <TouchableOpacity
+        style={{
+          backgroundColor: 'transparent',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+        onPress={() => {
+          if (activeHighlighter) setText(text + '>')
+          else setText(text + '<')
+          setActiveHighlighter(!activeHighlighter)
+        }}>
+        <Icon
+          style={{color: activeHighlighter ? 'red' : 'white', fontSize: 20}}
+          name='highlighter'
+          type='FontAwesome5'
+        />
+      </TouchableOpacity>
+
+      <TextInput
+        style={styleInput}
+        placeholder='واژه یا سوال  را وارد کنید'
+        multiline={true}
+        onChangeText={text => {
+          setText(text)
+          params.onChageText(text)
+        }}
+        defaultValue={text}
+      />
+    </View>
+  )
+}
 const appendText = array => {
   let text = ''
   for (let i = 0; i < array.length; i++) {
@@ -156,7 +202,6 @@ const AddCard = ({navigation}) => {
           <TextInput
             style={styles.InputText}
             placeholder='واژه یا سوال  را وارد کنید'
-            multiline={true}
             onChangeText={text => {
               setVoice1Path(text + '1.mp3')
               setVoice2Path(text + '2.mp3')

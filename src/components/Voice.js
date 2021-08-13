@@ -1,6 +1,15 @@
 import {Icon} from 'native-base'
 import React, {useState, useEffect, useRef} from 'react'
-import {StyleSheet, Text, TouchableOpacity, View, Slider} from 'react-native'
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Slider,
+  Dimensions,
+  Animated,
+  Easing,
+} from 'react-native'
 import SoundRecorder from 'react-native-sound-recorder'
 import Toast from 'react-native-simple-toast'
 
@@ -215,7 +224,77 @@ const VoiceRecorder = inputpath => {
   )
 }
 
-export {VoicePlayer, VoiceRecorder}
+const VoiceRecorderWithOptions = params => {
+  let ScreenWidth = Dimensions.get('window').width
+  let [left, setLeft] = useState(new Animated.Value(ScreenWidth))
+  let [open, close] = useState(params.open)
+  const [startRecord, setStartRecord] = useState(false)
+  const [startPlay, setStartPlay] = useState(false)
+  let iconRecord = startRecord ? 'stop' : 'record'
+  let iconPlay = startPlay ? 'pause' : 'play'
+  const [remainingSecs, setRemainingSecs] = useState(0)
+  const {mins, secs} = getRemaining(remainingSecs)
+  const BoxAnimatedStyles = [
+    {
+      width: 200,
+      height: 60,
+      backgroundColor: 'white',
+      left: left,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: 'black',
+      shadowOffset: {width: 0, height: 2},
+      shadowOpacity: 0.9,
+      shadowRadius: 3,
+      elevation: 3,
+    },
+  ]
+  const CloseanimatedBox = () => {
+    Animated.timing(left, {
+      toValue: ScreenWidth,
+      duration: 700,
+      easing: Easing.linear,
+      useNativeDriver: false,
+    }).start(() => {})
+  }
+  const OpenanimatedBox = () => {
+    Animated.timing(left, {
+      toValue: 100,
+      duration: 700,
+      easing: Easing.linear,
+      useNativeDriver: false,
+    }).start(() => {})
+  }
+  useEffect(() => {
+    open && OpenanimatedBox()
+    !open && CloseanimatedBox()
+  })
+
+  return (
+    <Animated.View style={BoxAnimatedStyles}>
+      <View style={{flexDirection: 'row'}}>
+        <TouchableOpacity style={styles.playBtn} onPress={() => _onplay()}>
+          <Icon
+            name={iconPlay}
+            style={{textAlign: 'center', color: 'red', fontSize: 35}}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.playBtn}
+          onPress={() => (startRecord ? StopRecord() : StartRecord())}>
+          <Icon
+            name={iconRecord}
+            type={'MaterialCommunityIcons'}
+            style={{textAlign: 'center', color: 'red', fontSize: 35}}
+          />
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.timerText}>{`${mins}:${secs}`}</Text>
+    </Animated.View>
+  )
+}
+export {VoicePlayer, VoiceRecorder, VoiceRecorderWithOptions}
 
 const styles = StyleSheet.create({
   containerRecorder: {
